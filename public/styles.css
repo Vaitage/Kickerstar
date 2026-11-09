@@ -223,14 +223,14 @@ select.input option { background: #14201c; }
 .side.b .avatar { box-shadow: 0 0 0 2px var(--red); }
 .vs { font-weight: 900; font-size: .8rem; color: var(--muted); padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .06); }
 
-.score-entry { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0; }
+.score-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; margin: 6px 0; width: 100%; }
 .colon { font-size: 2rem; font-weight: 900; color: var(--muted); }
-.stepper { display: flex; align-items: center; gap: 4px; padding: 5px; min-width: 0; border-radius: 16px; background: rgba(0, 0, 0, .25); }
-.stepper.a { box-shadow: inset 0 0 0 2px rgba(77, 163, 255, .45); }
-.stepper.b { box-shadow: inset 0 0 0 2px rgba(255, 93, 108, .45); }
-.step { width: 38px; height: 42px; flex: none; border-radius: 12px; border: 0; background: rgba(255, 255, 255, .08); color: var(--text); font-size: 1.4rem; font-weight: 700; cursor: pointer; }
+.stepper { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px; padding: 5px; min-width: 0; max-width: 190px; width: 100%; border-radius: 16px; background: rgba(0, 0, 0, .25); }
+.stepper.a { justify-self: end; box-shadow: inset 0 0 0 2px rgba(77, 163, 255, .45); }
+.stepper.b { justify-self: start; box-shadow: inset 0 0 0 2px rgba(255, 93, 108, .45); }
+.step { width: 38px; height: 42px; border-radius: 12px; border: 0; background: rgba(255, 255, 255, .08); color: var(--text); font-size: 1.4rem; font-weight: 700; cursor: pointer; }
 .step:active { background: rgba(255, 255, 255, .18); }
-.score-input { width: 46px; height: 50px; border: 0; background: transparent; color: var(--text); text-align: center; font: 800 2rem/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; outline: none; }
+.score-input { width: 100%; min-width: 0; padding: 0; height: 50px; border: 0; background: transparent; color: var(--text); text-align: center; font: 800 2rem/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; outline: none; }
 .score-input::placeholder { color: var(--muted); }
 
 .list { padding: 4px 0; }
@@ -329,3 +329,7 @@ textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; li
 .lock form { margin-top: 4px; }
 .page-head { align-items: center; margin-bottom: 4px; }
 .page-head .page-title { margin: 4px 0 12px; }
+
+/* Schmale Tisch-Karten (z. B. 3 Tische nebeneinander am PC) */
+@media (max-width: 360px) { .step { width: 32px; } }
+.table-card .row .btn.primary.grow { min-width: 0; padding: 0 12px; }

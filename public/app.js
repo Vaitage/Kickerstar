@@ -159,7 +159,7 @@ function pageOverview() {
         </div>
         <div class="row">
           <button class="btn ghost" data-score-cancel="${g.id}">Zurück</button>
-          <button class="btn primary grow" data-score-save="${g.id}">Ergebnis speichern</button>
+          <button class="btn primary grow" data-score-save="${g.id}">Speichern</button>
         </div>` : `
         <div class="row">
           <button class="btn ghost danger" data-confirm data-cancel-game="${g.id}">Abbrechen</button>
@@ -188,7 +188,7 @@ function stepper(side, gameId, val) {
   return `
   <div class="stepper ${side}">
     <button type="button" class="step" data-step="${side}" data-dir="-1" data-game="${gameId}" aria-label="weniger">−</button>
-    <input class="score-input" inputmode="numeric" pattern="[0-9]*" data-score-input="${side}" data-game="${gameId}" value="${val}">
+    <input class="score-input" inputmode="numeric" pattern="[0-9]*" data-score-input="${side}" data-game="${gameId}" value="${val}" placeholder="0">
     <button type="button" class="step" data-step="${side}" data-dir="1" data-game="${gameId}" aria-label="mehr">+</button>
   </div>`;
 }
