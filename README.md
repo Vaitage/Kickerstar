@@ -36,22 +36,22 @@ Eine PWA braucht `https://` oder `localhost`. Es gibt zwei Wege:
 
 **1. Über GitHub Pages** (am einfachsten, Daten bleiben trotzdem nur auf dem Handy)
 Repo → *Settings → Pages* → Source „Deploy from a branch“, Branch `main`, Ordner `/ (root)`.
-Danach `https://vaitage.github.io/KickerStar/public/` in Chrome öffnen und über das Menü **„App installieren“** wählen.
+Danach `https://vaitage.github.io/Kickerstar/public/` in Chrome öffnen und über das Menü **„App installieren“** wählen.
 (Pages für private Repos braucht GitHub Pro. Sonst das Repo öffentlich schalten oder Weg 2 nehmen.)
 
 **2. Mit Termux direkt auf dem Handy** (komplett ohne Internet)
 ```bash
 pkg install nodejs git
-git clone https://github.com/Vaitage/KickerStar.git
-cd KickerStar && node server.js
+git clone https://github.com/Vaitage/Kickerstar.git
+cd Kickerstar && node server.js
 ```
 Dann in Chrome `http://localhost:8080` öffnen und **„App installieren“** wählen. In diesem Fall läuft die App im Server-Modus auf dem Handy selbst.
 
 ### B) Auf dem Laptop / Pi mit Tailscale
 
 ```bash
-git clone https://github.com/Vaitage/KickerStar.git
-cd KickerStar
+git clone https://github.com/Vaitage/Kickerstar.git
+cd Kickerstar
 node server.js            # braucht Node 18+, keine weiteren Pakete
 # oder mit Docker:
 docker compose up -d
