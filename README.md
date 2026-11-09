@@ -8,7 +8,7 @@ Lokale Tischkicker-Liga für den Verein: anmelden mit Namen, Tisch wählen, Spie
 - **Anmeldung der Spieler** durch Antippen des eigenen Namens. Spieler können Spiele starten, Ergebnisse eintragen und laufende Spiele abbrechen.
 - **Tische:** 3 Tische voreingestellt, Anzahl und Namen sind änderbar.
 - **Spiel starten:** Tisch, Modus 1:1 oder 2:2, Spieler per Dropdown. Belegte Tische und Spieler, die gerade spielen, sind gesperrt.
-- **Ergebnis eintragen mit 3 Tipps:** Gewinner antippen (bekommt automatisch 10 Tore), Tore des Verlierers antippen (0–9), Speichern. Für Ausnahmen gibt es „Anderes Ergebnis eintragen“ mit +/−. Die Tore zum Sieg sind einstellbar.
+- **Ergebnis eintragen mit 3 Tipps:** 1. Gewinner antippen (bekommt automatisch 10 Tore), 2. Gegentore des Gewinners antippen (0–9), Speichern. Für Ausnahmen gibt es „Anderes Ergebnis eintragen“ mit +/−. Die Tore zum Sieg sind einstellbar.
 - **Punkte:** 1:1-Sieg = 2 Punkte, 2:2-Sieg = 1 Punkt für jeden Sieger (einstellbar).
 - **Tore und Tordifferenz** pro Spieler, im Doppel zählen die Teamtore für beide.
 - **Ranking** wahlweise nach Punkten, Quote oder Elo, mit Podium und Formkurve (letzte 5 Spiele).
