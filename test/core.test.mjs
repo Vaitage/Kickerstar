@@ -1,0 +1,63 @@
+// Tests für die Kern-Logik:  node --test test/
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { emptyState, reduce, computeStats, ranking, ActionError } from '../public/core.js';
+
+function setup(names = ['Robert', 'Anna', 'Ben', 'Carla']) {
+  let s = emptyState();
+  for (const n of names) s = reduce(s, { type: 'addPlayer', payload: { name: n } });
+  const id = Object.fromEntries(s.players.map(p => [p.name, p.id]));
+  return { s, id };
+}
+
+test('Spieler anlegen ist doppelt-sicher (Groß/Klein egal)', () => {
+  let { s } = setup(['Robert']);
+  s = reduce(s, { type: 'addPlayer', payload: { name: 'robert ' } });
+  assert.equal(s.players.length, 1);
+});
+
+test('1:1 Sieg gibt 2 Punkte, 2:2 Sieg gibt jedem 1 Punkt', () => {
+  let { s, id } = setup();
+  s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '1v1', teamA: [id.Robert], teamB: [id.Anna], scoreA: 10, scoreB: 6, at: 1 } });
+  s = reduce(s, { type: 'recordGame', payload: { table: 1, mode: '2v2', teamA: [id.Robert, id.Ben], teamB: [id.Anna, id.Carla], scoreA: 4, scoreB: 10, at: 2 } });
+  const r = Object.fromEntries(computeStats(s).rows.map(x => [x.name, x]));
+  assert.equal(r.Robert.points, 2);
+  assert.equal(r.Anna.points, 1);
+  assert.equal(r.Carla.points, 1);
+  assert.equal(r.Ben.points, 0);
+  assert.equal(r.Robert.goalDiff, 4 - 6);       // +4 und -6
+  assert.equal(r.Anna.goalDiff, -4 + 6);
+  assert.equal(r.Robert.maxPoints, 3);
+  assert.ok(Math.abs(r.Robert.quote - 2 / 3) < 1e-9);
+});
+
+test('Live-Spiel: Tisch und Spieler sind belegt, Ergebnis beendet es', () => {
+  let { s, id } = setup();
+  s = reduce(s, { type: 'startGame', payload: { id: 'g1', table: 0, mode: '1v1', teamA: [id.Robert], teamB: [id.Anna] } });
+  assert.throws(() => reduce(s, { type: 'startGame', payload: { table: 0, mode: '1v1', teamA: [id.Ben], teamB: [id.Carla] } }), ActionError);
+  assert.throws(() => reduce(s, { type: 'startGame', payload: { table: 1, mode: '1v1', teamA: [id.Robert], teamB: [id.Carla] } }), ActionError);
+  assert.throws(() => reduce(s, { type: 'finishGame', payload: { id: 'g1', scoreA: 5, scoreB: 5 } }), ActionError);
+  s = reduce(s, { type: 'finishGame', payload: { id: 'g1', scoreA: 3, scoreB: 10 } });
+  assert.equal(s.games[0].status, 'done');
+});
+
+test('Mindestspielzahl trennt gewertet / ungewertet', () => {
+  let { s, id } = setup(['Aa', 'Bb', 'Cc']);
+  s = reduce(s, { type: 'updateSettings', payload: { minGames: 2 } });
+  for (let i = 0; i < 2; i++) {
+    s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '1v1', teamA: [id.Aa], teamB: [id.Bb], scoreA: 10, scoreB: i, at: i + 1 } });
+  }
+  s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '1v1', teamA: [id.Cc], teamB: [id.Aa], scoreA: 10, scoreB: 2, at: 9 } });
+  const r = ranking(s, 'punkte');
+  assert.deepEqual(r.ranked.map(x => x.name), ['Aa', 'Bb']);
+  assert.deepEqual(r.unranked.map(x => x.name), ['Cc']);
+});
+
+test('Elo bleibt in Summe gleich (Nullsummenspiel)', () => {
+  let { s, id } = setup();
+  s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '2v2', teamA: [id.Robert, id.Ben], teamB: [id.Anna, id.Carla], scoreA: 10, scoreB: 8, at: 1 } });
+  s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '1v1', teamA: [id.Robert], teamB: [id.Carla], scoreA: 2, scoreB: 10, at: 2 } });
+  const { rows } = computeStats(s);
+  const total = rows.reduce((a, r) => a + r.elo, 0);
+  assert.ok(Math.abs(total - 4000) <= 2);
+});

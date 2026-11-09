@@ -1,0 +1,14 @@
+{
+  "name": "kickerstars",
+  "version": "0.1.0",
+  "description": "KickerStars – lokale Tischkicker-Liga: Spiele, Ergebnisse, Ranking",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

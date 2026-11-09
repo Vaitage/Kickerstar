@@ -1,0 +1,650 @@
+// KickerStars – Oberfläche
+import { computeStats, ranking, liveGames, pointsPerWinner, findPlayerByName, uid } from './core.js';
+import { createStore } from './store.js';
+
+const USER_KEY = 'kickerstars.user';
+const $main = document.getElementById('main');
+const $nav = document.getElementById('nav');
+const $user = document.getElementById('user');
+const $conn = document.getElementById('conn');
+
+let store;
+let state;
+let me = localStorage.getItem(USER_KEY) || null;
+
+// Entwürfe, damit Eingaben bei Aktualisierungen (z. B. vom Server) nicht verloren gehen
+const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct: false, scoreA: '', scoreB: '' };
+const scoreDraft = {};      // gameId -> {a, b}
+let rankMode = null;         // Ansicht im Ranking (null = Standard aus Einstellungen)
+let addOpen = false;         // „Spieler hinzufügen“ aufgeklappt?
+
+// ---------- Hilfsfunktionen ----------
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nameOf = (id) => state.players.find(p => p.id === id)?.name ?? 'Unbekannt';
+const team = (ids) => ids.map(nameOf).map(esc).join(' &amp; ');
+const initials = (n) => n.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+const hue = (s) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
+const avatar = (id, size = '') => {
+  const n = nameOf(id);
+  return `<span class="avatar ${size}" style="--h:${hue(n)}">${esc(initials(n))}</span>`;
+};
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const fmtDay = (ts) => {
+  const d = new Date(ts), t = new Date();
+  const y = new Date(); y.setDate(t.getDate() - 1);
+  if (d.toDateString() === t.toDateString()) return 'Heute';
+  if (d.toDateString() === y.toDateString()) return 'Gestern';
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+};
+const pct = (x) => Math.round(x * 100) + ' %';
+const signed = (n) => (n > 0 ? '+' : '') + n;
+
+function toast(msg, kind = 'error') {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
+}
+
+async function act(type, payload, okMsg) {
+  try {
+    await store.dispatch({ type, payload });
+    if (okMsg) toast(okMsg, 'ok');
+    return true;
+  } catch (e) {
+    toast(e.message || 'Fehler');
+    return false;
+  }
+}
+
+function route() {
+  const [path, query] = (location.hash.slice(1) || '/').split('?');
+  return { parts: path.split('/').filter(Boolean), q: new URLSearchParams(query || '') };
+}
+
+// ---------- Seiten ----------
+function pageLogin() {
+  const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  return `
+  <section class="login">
+    <div class="login-logo">${logoSvg()}</div>
+    <h1>Kicker<span>Stars</span></h1>
+    <p class="muted">Wer steht am Tisch?</p>
+    <form id="loginForm" class="card login-card" autocomplete="off">
+      <label class="label" for="loginName">Dein Name</label>
+      <input id="loginName" class="input big" maxlength="30" placeholder="z. B. Robert" required>
+      <button class="btn primary block">Los geht's</button>
+    </form>
+    ${players.length ? `
+      <p class="muted small">… oder tippe auf deinen Namen</p>
+      <div class="chips">
+        ${players.map(p => `<button class="chip" data-login="${p.id}">${avatar(p.id, 'sm')}${esc(p.name)}</button>`).join('')}
+      </div>` : ''}
+  </section>`;
+}
+
+function pageOverview() {
+  const live = liveGames(state);
+  const done = state.games.filter(g => g.status === 'done').sort((a, b) => b.endedAt - a.endedAt);
+  const today = new Date().toDateString();
+  const todayGames = done.filter(g => new Date(g.endedAt).toDateString() === today);
+  const goals = done.reduce((s, g) => s + g.scoreA + g.scoreB, 0);
+  const { eloChange } = computeStats(state);
+
+  const tableCard = (name, i) => {
+    const g = live.find(x => x.table === i);
+    if (!g) {
+      return `
+      <article class="card table-card free">
+        <header><span class="table-name">${esc(name)}</span><span class="badge free">Frei</span></header>
+        <div class="free-body">
+          <div class="mini-table"></div>
+          <a class="btn primary" href="#/spiel?t=${i}">Spiel starten</a>
+        </div>
+      </article>`;
+    }
+    const sd = scoreDraft[g.id];
+    return `
+    <article class="card table-card live">
+      <header>
+        <span class="table-name">${esc(name)}</span>
+        <span class="badge live"><i class="pulse"></i>Live · <span data-since="${g.startedAt}">0:00</span></span>
+      </header>
+      <div class="matchup">
+        <div class="side a">${g.teamA.map(id => `<div class="pl">${avatar(id)}<span>${esc(nameOf(id))}</span></div>`).join('')}</div>
+        <div class="vs">${g.mode === '2v2' ? '2:2' : '1:1'}</div>
+        <div class="side b">${g.teamB.map(id => `<div class="pl">${avatar(id)}<span>${esc(nameOf(id))}</span></div>`).join('')}</div>
+      </div>
+      ${sd ? `
+        <div class="score-entry">
+          ${stepper('a', g.id, sd.a)}
+          <span class="colon">:</span>
+          ${stepper('b', g.id, sd.b)}
+        </div>
+        <div class="row">
+          <button class="btn ghost" data-score-cancel="${g.id}">Zurück</button>
+          <button class="btn primary grow" data-score-save="${g.id}">Ergebnis speichern</button>
+        </div>` : `
+        <div class="row">
+          <button class="btn ghost danger" data-confirm data-cancel-game="${g.id}">Abbrechen</button>
+          <button class="btn primary grow" data-score-open="${g.id}">Ergebnis eintragen</button>
+        </div>`}
+    </article>`;
+  };
+
+  return `
+  <section class="stats-strip">
+    <div><b>${todayGames.length}</b><span>Spiele heute</span></div>
+    <div><b>${done.length}</b><span>Spiele gesamt</span></div>
+    <div><b>${goals}</b><span>Tore</span></div>
+    <div><b>${state.players.length}</b><span>Spieler</span></div>
+  </section>
+
+  <h2 class="section-title">Tische</h2>
+  <section class="tables">${state.settings.tables.map(tableCard).join('')}</section>
+
+  <h2 class="section-title">Letzte Spiele</h2>
+  ${done.length ? `<section class="card list">${done.slice(0, 20).map(g => gameRow(g, eloChange)).join('')}</section>`
+    : `<div class="empty card">Noch keine Spiele. Ab an den Tisch! ⚽</div>`}`;
+}
+
+function stepper(side, gameId, val) {
+  return `
+  <div class="stepper ${side}">
+    <button type="button" class="step" data-step="${side}" data-dir="-1" data-game="${gameId}" aria-label="weniger">−</button>
+    <input class="score-input" inputmode="numeric" pattern="[0-9]*" data-score-input="${side}" data-game="${gameId}" value="${val}">
+    <button type="button" class="step" data-step="${side}" data-dir="1" data-game="${gameId}" aria-label="mehr">+</button>
+  </div>`;
+}
+
+function gameRow(g, eloChange, highlight) {
+  const aWon = g.scoreA > g.scoreB;
+  const ppw = pointsPerWinner(state.settings, g.mode);
+  const tName = state.settings.tables[g.table] ?? `Tisch ${g.table + 1}`;
+  const deltaFor = highlight && eloChange?.[g.id]?.[highlight];
+  return `
+  <div class="game-row">
+    <div class="game-meta">
+      <span>${fmtDay(g.endedAt)} · ${fmtTime(g.endedAt)}</span>
+      <span>${esc(tName)} · ${g.mode === '2v2' ? '2:2' : '1:1'}</span>
+    </div>
+    <div class="game-main">
+      <span class="t a ${aWon ? 'win' : ''}">${team(g.teamA)}</span>
+      <span class="score"><b class="${aWon ? 'win' : ''}">${g.scoreA}</b>:<b class="${!aWon ? 'win' : ''}">${g.scoreB}</b></span>
+      <span class="t b ${!aWon ? 'win' : ''}">${team(g.teamB)}</span>
+    </div>
+    <div class="game-foot">
+      <span class="pts">+${ppw} ${ppw === 1 ? 'Punkt' : 'Punkte'} ${g.mode === '2v2' ? 'pro Sieger' : ''}</span>
+      ${deltaFor !== undefined && deltaFor !== false ? `<span class="elo ${deltaFor >= 0 ? 'up' : 'down'}">Elo ${signed(Math.round(deltaFor))}</span>` : ''}
+      <button class="link danger" data-confirm data-delete-game="${g.id}">Löschen</button>
+    </div>
+  </div>`;
+}
+
+function pageNewGame(q) {
+  const live = liveGames(state);
+  const busy = new Set(live.flatMap(g => [...g.teamA, ...g.teamB]));
+  const tables = state.settings.tables;
+  if (q.has('t') && draft.table === null) draft.table = Number(q.get('t'));
+  if (draft.table === null || live.some(g => g.table === draft.table) || draft.table >= tables.length) {
+    const free = tables.findIndex((_, i) => !live.some(g => g.table === i));
+    draft.table = free >= 0 ? free : 0;
+  }
+  if (!draft.a1 && me && !busy.has(me)) draft.a1 = me;
+  const slots = draft.mode === '2v2' ? ['a1', 'a2', 'b1', 'b2'] : ['a1', 'b1'];
+  const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+  const select = (slot, label) => {
+    const taken = new Set(slots.filter(s => s !== slot).map(s => draft[s]).filter(Boolean));
+    return `
+    <label class="field">
+      <span class="label">${label}</span>
+      <select class="input" data-slot="${slot}">
+        <option value="">– Spieler wählen –</option>
+        ${players.map(p => {
+          const dis = taken.has(p.id) || (busy.has(p.id) && !draft.direct);
+          return `<option value="${p.id}" ${draft[slot] === p.id ? 'selected' : ''} ${dis ? 'disabled' : ''}>${esc(p.name)}${busy.has(p.id) ? ' (spielt gerade)' : ''}</option>`;
+        }).join('')}
+      </select>
+    </label>`;
+  };
+
+  return `
+  <h1 class="page-title">Neues Spiel</h1>
+  <form id="gameForm" class="stack" autocomplete="off">
+    <section class="card">
+      <span class="label">Tisch</span>
+      <div class="segmented">
+        ${tables.map((t, i) => {
+          const occ = live.some(g => g.table === i);
+          return `<button type="button" class="seg ${draft.table === i ? 'on' : ''}" data-table="${i}" ${occ && !draft.direct ? 'disabled' : ''}>${esc(t)}${occ ? '<small>belegt</small>' : ''}</button>`;
+        }).join('')}
+      </div>
+      <span class="label">Modus</span>
+      <div class="segmented two">
+        <button type="button" class="seg ${draft.mode === '1v1' ? 'on' : ''}" data-mode="1v1">1 gegen 1<small>Sieger +${state.settings.pointsSingle}</small></button>
+        <button type="button" class="seg ${draft.mode === '2v2' ? 'on' : ''}" data-mode="2v2">2 gegen 2<small>je Sieger +${state.settings.pointsDoubleEach}</small></button>
+      </div>
+    </section>
+
+    <section class="teams">
+      <div class="card team-box a">
+        <h3>Team Blau</h3>
+        ${select('a1', draft.mode === '2v2' ? 'Abwehr / Spieler 1' : 'Spieler')}
+        ${draft.mode === '2v2' ? select('a2', 'Sturm / Spieler 2') : ''}
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="card team-box b">
+        <h3>Team Rot</h3>
+        ${select('b1', draft.mode === '2v2' ? 'Abwehr / Spieler 1' : 'Spieler')}
+        ${draft.mode === '2v2' ? select('b2', 'Sturm / Spieler 2') : ''}
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="switch">
+        <input type="checkbox" id="direct" ${draft.direct ? 'checked' : ''}>
+        <span class="track"></span>
+        <span>Spiel ist schon vorbei – Ergebnis direkt eintragen</span>
+      </label>
+      ${draft.direct ? `
+        <div class="score-entry">
+          ${stepper('a', 'draft', draft.scoreA)}
+          <span class="colon">:</span>
+          ${stepper('b', 'draft', draft.scoreB)}
+        </div>` : ''}
+    </section>
+
+    <button class="btn primary block big">${draft.direct ? 'Ergebnis speichern' : 'Spiel starten'}</button>
+  </form>
+
+  <details class="card add-player" ${addOpen ? 'open' : ''}>
+    <summary>Spieler fehlt? Hier schnell hinzufügen</summary>
+    <form id="addPlayerForm" class="row">
+      <input class="input grow" id="newPlayer" maxlength="30" placeholder="Name">
+      <button class="btn">Hinzufügen</button>
+    </form>
+  </details>`;
+}
+
+const MODE_INFO = {
+  punkte: { label: 'Punkte', desc: 'Summe aller Punkte (1:1-Sieg +2, 2:2-Sieg je +1). Wer mehr spielt, kann mehr sammeln.' },
+  quote: { label: 'Quote', desc: 'Geholte Punkte ÷ mögliche Punkte. Unabhängig von der Anzahl der Spiele und fair zwischen 1:1 und 2:2.' },
+  elo: { label: 'Elo', desc: 'Spielstärke-Wertung: Siege gegen starke Gegner bringen mehr, Niederlagen gegen schwache kosten mehr.' },
+};
+const metricCell = (r, mode) =>
+  mode === 'quote' ? pct(r.quote) : mode === 'elo' ? r.elo : r.points;
+
+function pageRanking() {
+  const mode = rankMode || state.settings.rankingMode;
+  const { ranked, unranked } = ranking(state, mode);
+  const min = state.settings.minGames;
+  const podium = ranked.slice(0, 3);
+  const order = [1, 0, 2].filter(i => podium[i]);
+
+  const row = (r) => `
+    <a class="rank-row" href="#/spieler/${r.id}">
+      <span class="rank">${r.rank}</span>
+      ${avatar(r.id)}
+      <span class="who">
+        <b>${esc(r.name)}${r.id === me ? ' <em class="you">Du</em>' : ''}</b>
+        <small>${r.games} Sp · ${r.wins}S ${r.losses}N · Tore ${r.goalsFor}:${r.goalsAgainst} (${signed(r.goalDiff)})</small>
+      </span>
+      <span class="form">${r.form.map(f => `<i class="${f === 'S' ? 'w' : 'l'}"></i>`).join('')}</span>
+      <span class="metric">${metricCell(r, mode)}<small>${MODE_INFO[mode].label}</small></span>
+    </a>`;
+
+  return `
+  <h1 class="page-title">Ranking</h1>
+  <div class="segmented three pills">
+    ${Object.entries(MODE_INFO).map(([k, v]) => `<button class="seg ${mode === k ? 'on' : ''}" data-rank-mode="${k}">${v.label}</button>`).join('')}
+  </div>
+  <p class="muted small mode-desc">${MODE_INFO[mode].desc}</p>
+
+  ${podium.length ? `
+  <section class="podium">
+    ${order.map(i => {
+      const r = podium[i];
+      return `<a class="step-${i + 1}" href="#/spieler/${r.id}">
+        <div class="crown">${i === 0 ? '👑' : ''}</div>
+        ${avatar(r.id, 'lg')}
+        <b>${esc(r.name)}</b>
+        <span class="metric">${metricCell(r, mode)}</span>
+        <div class="block"><span>${r.rank}</span></div>
+      </a>`;
+    }).join('')}
+  </section>` : `<div class="empty card">Noch niemand hat ${min} Spiele erreicht. Erst dann wird gewertet.</div>`}
+
+  ${ranked.length ? `<section class="card list">${ranked.map(row).join('')}</section>` : ''}
+
+  ${state.settings.showUnranked && unranked.length ? `
+    <h2 class="section-title">Noch nicht gewertet <small>(unter ${min} Spielen)</small></h2>
+    <section class="card list">
+      ${unranked.map(r => `
+        <a class="rank-row unranked" href="#/spieler/${r.id}">
+          <span class="rank">–</span>
+          ${avatar(r.id)}
+          <span class="who">
+            <b>${esc(r.name)}${r.id === me ? ' <em class="you">Du</em>' : ''}</b>
+            <span class="progress"><i style="width:${min ? Math.min(100, (r.games / min) * 100) : 100}%"></i></span>
+            <small>${r.games} von ${min} Spielen · ${r.points} Pkt · TD ${signed(r.goalDiff)}</small>
+          </span>
+          <span class="metric dim">${metricCell(r, mode)}<small>${MODE_INFO[mode].label}</small></span>
+        </a>`).join('')}
+    </section>` : ''}`;
+}
+
+function pagePlayer(id) {
+  const { rows, eloChange } = computeStats(state);
+  const r = rows.find(x => x.id === id);
+  if (!r) return `<div class="empty card">Spieler nicht gefunden.</div>`;
+  const games = state.games
+    .filter(g => g.status === 'done' && [...g.teamA, ...g.teamB].includes(id))
+    .sort((a, b) => b.endedAt - a.endedAt);
+  const min = state.settings.minGames;
+  const { ranked } = ranking(state);
+  const pos = ranked.find(x => x.id === id)?.rank;
+  // Lieblingspartner / Angstgegner
+  const partner = {}, rival = {};
+  for (const g of games) {
+    const inA = g.teamA.includes(id);
+    const mine = inA ? g.teamA : g.teamB, opp = inA ? g.teamB : g.teamA;
+    const won = inA ? g.scoreA > g.scoreB : g.scoreB > g.scoreA;
+    for (const p of mine) if (p !== id) { partner[p] ??= { g: 0, w: 0 }; partner[p].g++; partner[p].w += won; }
+    for (const p of opp) { rival[p] ??= { g: 0, w: 0 }; rival[p].g++; rival[p].w += won; }
+  }
+  const best = Object.entries(partner).sort((a, b) => (b[1].w / b[1].g - a[1].w / a[1].g) || b[1].g - a[1].g)[0];
+  const nemesis = Object.entries(rival).sort((a, b) => (a[1].w / a[1].g - b[1].w / b[1].g) || b[1].g - a[1].g)[0];
+
+  return `
+  <section class="player-head card">
+    ${avatar(id, 'xl')}
+    <div>
+      <h1>${esc(r.name)}</h1>
+      <p class="muted">${r.games >= min ? `Platz ${pos ?? '–'} im Ranking` : `Noch ${min - r.games} Spiele bis zur Wertung`}</p>
+      <div class="form big">${r.form.map(f => `<i class="${f === 'S' ? 'w' : 'l'}">${f}</i>`).join('')}</div>
+    </div>
+  </section>
+  <section class="kpis">
+    <div class="card"><b>${r.points}</b><span>Punkte</span></div>
+    <div class="card"><b>${pct(r.quote)}</b><span>Quote</span></div>
+    <div class="card"><b>${r.elo}</b><span>Elo</span></div>
+    <div class="card"><b>${r.games}</b><span>Spiele (${r.singles}× 1:1, ${r.doubles}× 2:2)</span></div>
+    <div class="card"><b>${r.wins}:${r.losses}</b><span>Siege : Niederlagen</span></div>
+    <div class="card"><b>${signed(r.goalDiff)}</b><span>Tordiff. (${r.goalsFor}:${r.goalsAgainst})</span></div>
+  </section>
+  ${best || nemesis ? `<section class="kpis two">
+    ${best ? `<div class="card"><b>${esc(nameOf(best[0]))}</b><span>Bester Partner (${best[1].w}/${best[1].g} Siege)</span></div>` : ''}
+    ${nemesis ? `<div class="card"><b>${esc(nameOf(nemesis[0]))}</b><span>Angstgegner (${nemesis[1].w}/${nemesis[1].g} Siege)</span></div>` : ''}
+  </section>` : ''}
+  <h2 class="section-title">Spiele</h2>
+  ${games.length ? `<section class="card list">${games.slice(0, 50).map(g => gameRow(g, eloChange, id)).join('')}</section>` : `<div class="empty card">Noch keine Spiele.</div>`}`;
+}
+
+function pageSettings() {
+  const s = state.settings;
+  const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  return `
+  <h1 class="page-title">Einstellungen</h1>
+  <form id="settingsForm" class="stack">
+    <section class="card">
+      <h3>Wertung</h3>
+      <label class="field inline"><span>Mindestanzahl Spiele für die Wertung</span>
+        <input class="input num" type="number" min="0" max="999" name="minGames" value="${s.minGames}"></label>
+      <label class="switch"><input type="checkbox" name="showUnranked" ${s.showUnranked ? 'checked' : ''}><span class="track"></span>
+        <span>Spieler unter der Mindestanzahl trotzdem anzeigen</span></label>
+      <label class="field inline"><span>Standard-Sortierung im Ranking</span>
+        <select class="input" name="rankingMode">
+          ${Object.entries(MODE_INFO).map(([k, v]) => `<option value="${k}" ${s.rankingMode === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+        </select></label>
+    </section>
+    <section class="card">
+      <h3>Punkte</h3>
+      <label class="field inline"><span>Sieg 1 gegen 1 (Punkte für den Sieger)</span>
+        <input class="input num" type="number" min="0" max="99" name="pointsSingle" value="${s.pointsSingle}"></label>
+      <label class="field inline"><span>Sieg 2 gegen 2 (Punkte für jeden Sieger)</span>
+        <input class="input num" type="number" min="0" max="99" name="pointsDoubleEach" value="${s.pointsDoubleEach}"></label>
+      <label class="field inline"><span>Elo-Faktor K (wie stark ein Spiel zählt)</span>
+        <input class="input num" type="number" min="1" max="100" name="eloK" value="${s.eloK}"></label>
+    </section>
+    <section class="card">
+      <h3>Tische</h3>
+      <div class="stack tight" id="tableList">
+        ${s.tables.map((t, i) => `<div class="row"><input class="input grow" name="table" value="${esc(t)}" maxlength="30">
+          ${s.tables.length > 1 ? `<button type="button" class="btn ghost icon" data-remove-table="${i}" aria-label="Tisch entfernen">✕</button>` : ''}</div>`).join('')}
+      </div>
+      <button type="button" class="btn ghost" id="addTable">+ Tisch hinzufügen</button>
+    </section>
+    <button class="btn primary block">Einstellungen speichern</button>
+  </form>
+
+  <section class="card">
+    <h3>Spieler</h3>
+    <div class="stack tight">
+      ${players.map(p => `<form class="row" data-rename="${p.id}">
+        ${avatar(p.id, 'sm')}<input class="input grow" name="name" value="${esc(p.name)}" maxlength="30">
+        <button class="btn ghost">Umbenennen</button>
+        <button type="button" class="btn ghost icon danger" data-confirm data-delete-player="${p.id}" aria-label="Spieler löschen">🗑</button>
+      </form>`).join('') || '<p class="muted">Noch keine Spieler.</p>'}
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Daten</h3>
+    <p class="muted small">Speicherort: <b>${store.mode === 'server' ? 'KickerStars-Server (alle Geräte teilen die Daten)' : 'nur auf diesem Gerät'}</b>.
+      ${store.mode === 'lokal' ? 'Mach ab und zu eine Sicherung – beim Löschen der Browserdaten ist sonst alles weg.' : ''}</p>
+    <div class="row wrap">
+      <button class="btn" id="exportBtn">Sicherung herunterladen</button>
+      <label class="btn">Sicherung laden<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+      <button class="btn danger" data-confirm id="resetBtn">Alle Spiele & Spieler löschen</button>
+    </div>
+  </section>
+  <p class="muted small center">KickerStars v0.1</p>`;
+}
+
+// ---------- Rendern ----------
+function render() {
+  const { parts, q } = route();
+  const meExists = me && state.players.some(p => p.id === me);
+  if (!meExists) { me = null; localStorage.removeItem(USER_KEY); }
+
+  document.body.classList.toggle('logged-out', !me);
+  $user.innerHTML = me ? `${avatar(me, 'sm')}<span>${esc(nameOf(me))}</span><button class="link" id="logout">Abmelden</button>` : '';
+  $conn.innerHTML = store.mode === 'server'
+    ? `<span class="dot ${store.online ? 'on' : 'off'}"></span>${store.online ? 'Server' : 'Offline'}`
+    : '';
+
+  let html, tab = parts[0] || '';
+  if (!me) html = pageLogin();
+  else if (tab === 'spiel') html = pageNewGame(q);
+  else if (tab === 'ranking') html = pageRanking();
+  else if (tab === 'spieler') { html = pagePlayer(parts[1]); tab = 'ranking'; }
+  else if (tab === 'einstellungen') html = pageSettings();
+  else { html = pageOverview(); tab = ''; }
+
+  const scrollY = window.scrollY;
+  $main.innerHTML = html;
+  window.scrollTo(0, scrollY);
+  $nav.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
+  tickTimers();
+}
+
+function tickTimers() {
+  document.querySelectorAll('[data-since]').forEach(el => {
+    const s = Math.max(0, Math.floor((Date.now() - Number(el.dataset.since)) / 1000));
+    el.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  });
+}
+
+// ---------- Ereignisse ----------
+function armConfirm(btn) {
+  if (btn.classList.contains('armed')) return true;
+  btn.classList.add('armed');
+  btn.dataset.label = btn.innerHTML;
+  btn.innerHTML = 'Sicher? Nochmal tippen';
+  setTimeout(() => { if (btn.isConnected) { btn.classList.remove('armed'); btn.innerHTML = btn.dataset.label; } }, 3000);
+  return false;
+}
+
+function readScore(gameId) {
+  const src = gameId === 'draft' ? { a: draft.scoreA, b: draft.scoreB } : scoreDraft[gameId];
+  return { scoreA: parseInt(src.a, 10), scoreB: parseInt(src.b, 10) };
+}
+
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('button, [data-login], [data-rank-mode]');
+  if (!t) return;
+  if (t.hasAttribute('data-confirm') && !armConfirm(t)) { e.preventDefault(); return; }
+
+  if (t.id === 'logout') { me = null; localStorage.removeItem(USER_KEY); location.hash = '#/'; render(); return; }
+  if (t.dataset.login) { me = t.dataset.login; localStorage.setItem(USER_KEY, me); render(); return; }
+
+  if (t.dataset.table !== undefined) { draft.table = Number(t.dataset.table); render(); return; }
+  if (t.dataset.mode) { draft.mode = t.dataset.mode; if (draft.mode === '1v1') { draft.a2 = ''; draft.b2 = ''; } render(); return; }
+  if (t.dataset.rankMode) { rankMode = t.dataset.rankMode; render(); return; }
+
+  if (t.dataset.step) {
+    e.preventDefault();
+    const gid = t.dataset.game, side = t.dataset.step, dir = Number(t.dataset.dir);
+    const obj = gid === 'draft' ? draft : scoreDraft[gid];
+    const key = gid === 'draft' ? (side === 'a' ? 'scoreA' : 'scoreB') : side;
+    obj[key] = Math.max(0, Math.min(99, (parseInt(obj[key], 10) || 0) + dir));
+    const input = document.querySelector(`[data-score-input="${side}"][data-game="${gid}"]`);
+    if (input) input.value = obj[key];
+    return;
+  }
+  if (t.dataset.scoreOpen) { scoreDraft[t.dataset.scoreOpen] = { a: '', b: '' }; render(); return; }
+  if (t.dataset.scoreCancel) { delete scoreDraft[t.dataset.scoreCancel]; render(); return; }
+  if (t.dataset.scoreSave) {
+    const id = t.dataset.scoreSave;
+    if (await act('finishGame', { id, ...readScore(id), at: Date.now(), by: me }, 'Ergebnis gespeichert')) delete scoreDraft[id];
+    render();
+    return;
+  }
+  if (t.dataset.cancelGame) { await act('cancelGame', { id: t.dataset.cancelGame }, 'Spiel abgebrochen'); return; }
+  if (t.dataset.deleteGame) { await act('deleteGame', { id: t.dataset.deleteGame }, 'Spiel gelöscht'); return; }
+  if (t.dataset.deletePlayer) { await act('deletePlayer', { id: t.dataset.deletePlayer }, 'Spieler gelöscht'); return; }
+
+  if (t.id === 'addTable') {
+    const tables = [...document.querySelectorAll('[name="table"]')].map(i => i.value);
+    tables.push(`Tisch ${tables.length + 1}`);
+    await act('updateSettings', { tables }, 'Tisch hinzugefügt');
+    return;
+  }
+  if (t.dataset.removeTable !== undefined) {
+    const tables = state.settings.tables.filter((_, i) => i !== Number(t.dataset.removeTable));
+    await act('updateSettings', { tables }, 'Tisch entfernt');
+    return;
+  }
+  if (t.id === 'exportBtn') {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `kickerstars-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return;
+  }
+  if (t.id === 'resetBtn') { await act('reset', {}, 'Alles gelöscht'); return; }
+});
+
+document.addEventListener('toggle', (e) => {
+  if (e.target.classList?.contains('add-player')) addOpen = e.target.open;
+}, true);
+
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset.scoreInput) {
+    const gid = t.dataset.game;
+    const v = t.value.replace(/\D/g, '').slice(0, 2);
+    t.value = v;
+    if (gid === 'draft') draft[t.dataset.scoreInput === 'a' ? 'scoreA' : 'scoreB'] = v;
+    else if (scoreDraft[gid]) scoreDraft[gid][t.dataset.scoreInput] = v;
+  }
+});
+
+document.addEventListener('change', async (e) => {
+  const t = e.target;
+  if (t.dataset.slot) { draft[t.dataset.slot] = t.value; render(); }
+  if (t.id === 'direct') { draft.direct = t.checked; render(); }
+  if (t.id === 'importFile' && t.files[0]) {
+    try {
+      const data = JSON.parse(await t.files[0].text());
+      if (!Array.isArray(data.players) || !Array.isArray(data.games)) throw new Error();
+      await act('importState', { state: data }, `Sicherung geladen: ${data.players.length} Spieler, ${data.games.length} Spiele`);
+    } catch { toast('Das ist keine gültige KickerStars-Sicherung.'); }
+  }
+});
+
+document.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === 'loginForm') {
+    const name = f.querySelector('#loginName').value;
+    let p = findPlayerByName(state, name);
+    if (!p) {
+      if (!(await act('addPlayer', { id: uid(), name, at: Date.now() }))) return;
+      p = findPlayerByName(state, name);
+    }
+    me = p.id; localStorage.setItem(USER_KEY, me);
+    toast(`Hallo ${p.name}!`, 'ok');
+    render();
+  }
+  if (f.id === 'addPlayerForm') {
+    const name = f.querySelector('#newPlayer').value;
+    if (findPlayerByName(state, name)) return toast('Diesen Spieler gibt es schon.');
+    if (await act('addPlayer', { id: uid(), name, at: Date.now() }, 'Spieler hinzugefügt')) {
+      document.getElementById('newPlayer')?.focus();
+    }
+  }
+  if (f.id === 'gameForm') {
+    const teamA = draft.mode === '2v2' ? [draft.a1, draft.a2] : [draft.a1];
+    const teamB = draft.mode === '2v2' ? [draft.b1, draft.b2] : [draft.b1];
+    const base = { id: uid(), table: draft.table, mode: draft.mode, teamA, teamB, at: Date.now(), by: me };
+    const ok = draft.direct
+      ? await act('recordGame', { ...base, ...readScore('draft') }, 'Ergebnis gespeichert')
+      : await act('startGame', base, 'Spiel gestartet – viel Erfolg!');
+    if (ok) {
+      Object.assign(draft, { table: null, a1: '', a2: '', b1: '', b2: '', direct: false, scoreA: '', scoreB: '' });
+      location.hash = '#/';
+    }
+  }
+  if (f.id === 'settingsForm') {
+    const fd = new FormData(f);
+    await act('updateSettings', {
+      minGames: fd.get('minGames'),
+      showUnranked: fd.get('showUnranked') === 'on',
+      rankingMode: fd.get('rankingMode'),
+      pointsSingle: fd.get('pointsSingle'),
+      pointsDoubleEach: fd.get('pointsDoubleEach'),
+      eloK: fd.get('eloK'),
+      tables: fd.getAll('table'),
+    }, 'Gespeichert');
+    rankMode = null;
+  }
+  if (f.dataset.rename) {
+    await act('renamePlayer', { id: f.dataset.rename, name: new FormData(f).get('name') }, 'Umbenannt');
+  }
+});
+
+function logoSvg() {
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a3ff4f"/><stop offset="1" stop-color="#20d39a"/></linearGradient></defs>
+  <circle cx="32" cy="32" r="22" fill="none" stroke="url(#lg)" stroke-width="5"/>
+  <path d="M32 18l4.1 8.4 9.2 1.3-6.7 6.5 1.6 9.2L32 39l-8.2 4.4 1.6-9.2-6.7-6.5 9.2-1.3z" fill="url(#lg)"/></svg>`;
+}
+
+// ---------- Start ----------
+(async function init() {
+  store = await createStore();
+  state = store.state;
+  store.subscribe((s) => { state = s; render(); });
+  window.addEventListener('hashchange', () => { if (!location.hash.startsWith('#/spiel')) draft.table = null; render(); window.scrollTo(0, 0); });
+  setInterval(tickTimers, 1000);
+  render();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
