@@ -65,6 +65,15 @@ docker compose up -d
 Die Handys im Tailnet öffnen `http://<tailscale-name>:8080`.
 Für „App installieren“ auf Android ist https nötig. Das geht mit `tailscale serve --bg 8080`, danach die App unter `https://<name>.<tailnet>.ts.net` öffnen.
 
+**Raspberry Pi, auf dem schon andere Apps hinter Tailscale laufen:** Der Container lauscht nur lokal, Tailscale liefert https auf einem eigenen Port.
+
+```bash
+cp .env.example .env                 # 127.0.0.1:8020
+docker compose up -d --build
+sudo tailscale serve --bg --https=8444 http://127.0.0.1:8020
+```
+Die App ist dann unter `https://<name>.<tailnet>.ts.net:8444` erreichbar (nur im Tailnet). Die Daten liegen in `./data/state.json`.
+
 ## Design
 
 Der Hintergrund ist ein Kickertisch in der Draufsicht mit Rasen, Linien, Stangen, roten und blauen Figuren und Ball. Er wird von `tools/make_bg.py` als SVG erzeugt (`public/img/`). Die Bedienelemente sind in Metall/Silber gehalten.

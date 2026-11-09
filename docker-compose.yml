@@ -1,9 +1,13 @@
+# Start:  docker compose up -d --build
+# Adresse und Port lassen sich über eine .env-Datei neben dieser Datei ändern (siehe .env.example).
 services:
   kickerstars:
     build: .
+    image: kickerstars
     container_name: kickerstars
+    init: true
     ports:
-      - "8080:8080"
+      - "${KICKERSTARS_BIND:-0.0.0.0}:${KICKERSTARS_PORT:-8080}:8080"
     volumes:
       - ./data:/data
     restart: unless-stopped

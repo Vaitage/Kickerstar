@@ -1,5 +1,5 @@
 // Offline-Cache für die App-Dateien (die Daten selbst liegen im Browser bzw. auf dem Server)
-const CACHE = 'kickerstars-v14';
+const CACHE = 'kickerstars-v15';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'store.js', 'demo.js', 'stats.js', 'manifest.webmanifest',
   'icons/icon.svg', 'img/table-portrait.svg', 'img/table-landscape.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
