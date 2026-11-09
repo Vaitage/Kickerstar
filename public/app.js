@@ -764,6 +764,14 @@ function logoSvg() {
   setInterval(tickTimers, 1000);
   render();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+      // Neue Version installiert -> einmal neu laden, damit sie sofort aktiv ist
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        w?.addEventListener('statechange', () => {
+          if (w.state === 'activated' && navigator.serviceWorker.controller) location.reload();
+        });
+      });
+    }).catch(() => {});
   }
 })();
