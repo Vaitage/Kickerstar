@@ -529,11 +529,6 @@ function pageStats() {
     </div>
   </section>
 
-  ${barChart(st.timeline.bars, {
-    title: st.timeline.unit === 'Stunde' ? 'Spiele heute pro Stunde' : 'Spiele pro Tag',
-    everyLabel: st.timeline.bars.length > 14 ? 5 : 1,
-  })}
-
   <section class="card chart-card">
     <h3>Blau gegen Rot</h3>
     <p class="muted small chart-sub">Gewinnt eine Tischseite öfter? (Team Blau = linke Spalte beim Spielstart)</p>

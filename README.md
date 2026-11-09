@@ -13,7 +13,7 @@ Lokale Tischkicker-Liga für den Verein: anmelden mit Namen, Tisch wählen, Spie
 - **Tore und Tordifferenz** pro Spieler, im Doppel zählen die Teamtore für beide.
 - **Ranking** wahlweise nach Punkten, Quote oder Elo, mit Podium und Formkurve (letzte 5 Spiele).
 - **Mindestspielzahl** (Standard 10). Darunter wird man angezeigt, aber nicht gewertet (einstellbar).
-- **Statistik** mit Zeitfilter (Alle, 30 Tage, 7 Tage, Heute): Kennzahlen, Spiele pro Tag, Uhrzeiten, Tische, Ergebnisverteilung, Blau gegen Rot, Rekorde und Bestenlisten (Siegesserie, meiste Spiele und Tore, bestes Duo, größte Rivalität).
+- **Statistik** mit Zeitfilter (Alle, 30 Tage, 7 Tage, Heute): Kennzahlen, Uhrzeiten, Tische, Ergebnisverteilung, Blau gegen Rot, Rekorde und Bestenlisten (Siegesserie, meiste Spiele und Tore, bestes Duo, größte Rivalität).
 - **Spielerseite** mit Statistik, bestem Partner, Angstgegner und Elo-Verlauf pro Spiel.
 - **Sicherung** als JSON herunterladen und wieder laden.
 - Installierbar als App (PWA), funktioniert **offline**.

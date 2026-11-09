@@ -26,30 +26,6 @@ export function gameStats(state, range = 'alle', now = Date.now()) {
   const timed = games.map(g => g.endedAt - g.startedAt).filter(ms => ms > 30e3 && ms < 2 * 36e5);
   const avgDuration = timed.length ? timed.reduce((a, b) => a + b, 0) / timed.length : null;
 
-  // ---- Verlauf: pro Tag (bzw. pro Stunde bei "heute")
-  let timeline;
-  if (range === 'heute') {
-    const hours = new Array(24).fill(0);
-    for (const g of games) hours[new Date(g.endedAt).getHours()]++;
-    const used = hours.map((c, h) => [h, c]).filter(([, c]) => c);
-    const lo = used.length ? Math.max(0, used[0][0] - 1) : 17, hi = used.length ? Math.min(23, used.at(-1)[0] + 1) : 22;
-    timeline = { unit: 'Stunde', bars: hours.slice(lo, hi + 1).map((c, i) => ({ label: `${lo + i}`, full: `${lo + i}:00–${lo + i + 1}:00 Uhr`, value: c })) };
-  } else {
-    const days = range === '7' ? 7 : range === '30' ? 30 : Math.min(30, Math.max(7, n ? Math.ceil((now - games[0].endedAt) / DAY) + 1 : 7));
-    const start = new Date(now); start.setHours(0, 0, 0, 0);
-    const bars = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d0 = start.getTime() - i * DAY, d1 = d0 + DAY;
-      const d = new Date(d0);
-      bars.push({
-        label: d.toLocaleDateString('de-DE', { day: 'numeric' }),
-        full: d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }),
-        value: games.filter(g => g.endedAt >= d0 && g.endedAt < d1).length,
-      });
-    }
-    timeline = { unit: 'Tag', bars };
-  }
-
   // ---- Uhrzeit (wann wird gespielt)
   const hours = new Array(24).fill(0);
   for (const g of games) hours[new Date(g.endedAt).getHours()]++;
@@ -118,7 +94,7 @@ export function gameStats(state, range = 'alle', now = Date.now()) {
 
   return {
     n, goals, avgGoals: n ? goals / n : 0, singles, doubles: n - singles, avgDuration,
-    timeline, byHour, byTable, results, otherResults: other, winGoals: W,
+    byHour, byTable, results, otherResults: other, winGoals: W,
     sides: { blau, rot: n - blau },
     records: { biggest, longest, zuNull, knapp, bestDay },
     leaders: {
