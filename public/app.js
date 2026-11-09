@@ -477,7 +477,7 @@ function pageSettings() {
       ${dataInfo}
       <button class="btn" id="exportBtn">Sicherung herunterladen</button>
     </section>
-    <p class="muted small center">KickerStars v0.2</p>`;
+    <p class="muted small center">KickerStars v0.3</p>`;
   }
 
   return `
@@ -554,7 +554,7 @@ function pageSettings() {
       <button class="btn danger" data-confirm id="resetBtn">Alle Spiele & Spieler löschen</button>
     </div>
   </section>
-  <p class="muted small center">KickerStars v0.2</p>`;
+  <p class="muted small center">KickerStars v0.3</p>`;
 }
 
 // ---------- Rendern ----------
@@ -812,7 +812,7 @@ document.addEventListener('submit', async (e) => {
 });
 
 function logoSvg() {
-  return `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a3ff4f"/><stop offset="1" stop-color="#20d39a"/></linearGradient></defs>
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#9aa3ab"/></linearGradient></defs>
   <circle cx="32" cy="32" r="22" fill="none" stroke="url(#lg)" stroke-width="5"/>
   <path d="M32 18l4.1 8.4 9.2 1.3-6.7 6.5 1.6 9.2L32 39l-8.2 4.4 1.6-9.2-6.7-6.5 9.2-1.3z" fill="url(#lg)"/></svg>`;
 }

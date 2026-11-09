@@ -1,7 +1,7 @@
 // Offline-Cache für die App-Dateien (die Daten selbst liegen im Browser bzw. auf dem Server)
-const CACHE = 'kickerstars-v6';
+const CACHE = 'kickerstars-v8';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'store.js', 'demo.js', 'manifest.webmanifest',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
+  'icons/icon.svg', 'img/table-portrait.svg', 'img/table-landscape.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));

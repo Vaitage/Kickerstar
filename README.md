@@ -64,6 +64,11 @@ docker compose up -d
 Die Handys im Tailnet öffnen `http://<tailscale-name>:8080`.
 Für „App installieren“ auf Android ist https nötig. Das geht mit `tailscale serve --bg 8080`, danach die App unter `https://<name>.<tailnet>.ts.net` öffnen.
 
+## Design
+
+Der Hintergrund ist ein Kickertisch in der Draufsicht mit Rasen, Linien, Stangen, roten und blauen Figuren und Ball. Er wird von `tools/make_bg.py` als SVG erzeugt (`public/img/`). Die Bedienelemente sind in Metall/Silber gehalten.
+Das vorige Design ist im Branch `backup/design-v1` gesichert.
+
 ## Entwicklung
 
 ```bash

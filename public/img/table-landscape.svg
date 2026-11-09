@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1068 668" preserveAspectRatio="xMidYMid slice"><g transform="translate(1068,0) rotate(90)"><defs>
+<linearGradient id="grassA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f7a3a"/><stop offset=".5" stop-color="#25904a"/><stop offset="1" stop-color="#1f7a3a"/></linearGradient>
+<linearGradient id="grassB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a6b33"/><stop offset=".5" stop-color="#1f7d3f"/><stop offset="1" stop-color="#1a6b33"/></linearGradient>
+<linearGradient id="rod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6c757d"/><stop offset=".25" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#b9c1c8"/><stop offset=".8" stop-color="#e4e8eb"/><stop offset="1" stop-color="#5d666e"/></linearGradient>
+<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2f33"/><stop offset=".5" stop-color="#15191c"/><stop offset="1" stop-color="#2a2f33"/></linearGradient>
+<linearGradient id="frameEdge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7dde2"/><stop offset=".5" stop-color="#7c868f"/><stop offset="1" stop-color="#d7dde2"/></linearGradient>
+<radialGradient id="bodyr" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ff5a5f"/><stop offset="1" stop-color="#b3121b"/></radialGradient>
+<radialGradient id="bodyb" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#5aa2ff"/><stop offset="1" stop-color="#1440a8"/></radialGradient>
+<radialGradient id="ball" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e9edf0"/><stop offset="1" stop-color="#aeb6bd"/></radialGradient>
+<radialGradient id="light" cx=".5" cy=".45" r=".75"><stop offset="0" stop-color="#ffffff" stop-opacity=".10"/><stop offset="1" stop-color="#000000" stop-opacity=".35"/></radialGradient>
+<filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".45"/></filter>
+</defs>
+<rect width="668" height="1068" fill="url(#frame)"/>
+<rect x="30" y="30" width="608" height="1008" rx="6" fill="none" stroke="url(#frameEdge)" stroke-width="3"/>
+<g transform="translate(34,34)">
+<rect y="0.0" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="83.3" width="600" height="83.8" fill="url(#grassB)"/>
+<rect y="166.7" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="250.0" width="600" height="83.8" fill="url(#grassB)"/>
+<rect y="333.3" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="416.7" width="600" height="83.8" fill="url(#grassB)"/>
+<rect y="500.0" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="583.3" width="600" height="83.8" fill="url(#grassB)"/>
+<rect y="666.7" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="750.0" width="600" height="83.8" fill="url(#grassB)"/>
+<rect y="833.3" width="600" height="83.8" fill="url(#grassA)"/>
+<rect y="916.7" width="600" height="83.8" fill="url(#grassB)"/>
+<rect x="22" y="22" width="556" height="956" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<line x1="22" y1="500.0" x2="578" y2="500.0" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<circle cx="300.0" cy="500.0" r="78" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<circle cx="300.0" cy="500.0" r="6" fill="#fff" fill-opacity=".85"/>
+<rect x="150.0" y="22" width="300" height="130" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<rect x="225.0" y="22" width="150" height="55" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<path d="M 240.0 152 A 70 70 0 0 0 360.0 152" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<rect x="215.0" y="-28" width="170" height="28" rx="4" fill="#0b0e10" stroke="url(#frameEdge)" stroke-width="2"/>
+<rect x="150.0" y="848" width="300" height="130" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<rect x="225.0" y="923" width="150" height="55" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<path d="M 240.0 848 A 70 70 0 0 1 360.0 848" fill="none" stroke="#ffffff" stroke-opacity=".85" stroke-width="4"/>
+<rect x="215.0" y="1000" width="170" height="28" rx="4" fill="#0b0e10" stroke="url(#frameEdge)" stroke-width="2"/>
+<rect width="600" height="1000" fill="url(#light)"/>
+<rect x="-64" y="106.1" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(300.0,111.1)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<rect x="-64" y="217.2" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(170.0,222.2)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(430.0,222.2)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<rect x="-64" y="328.3" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(120.0,333.3)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(300.0,333.3)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(480.0,333.3)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<rect x="-64" y="439.4" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(80.0,444.4)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(190.0,444.4)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(300.0,444.4)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(410.0,444.4)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(520.0,444.4)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<rect x="-64" y="550.6" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(80.0,555.6)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(190.0,555.6)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(300.0,555.6)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(410.0,555.6)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(520.0,555.6)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<rect x="-64" y="661.7" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(120.0,666.7)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(300.0,666.7)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<g transform="translate(480.0,666.7)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyr)"/>
+<rect x="-6" y="0" width="12" height="14" rx="5" fill="url(#bodyr)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyr)" opacity=".35"/>
+</g>
+<rect x="-64" y="772.8" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(170.0,777.8)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g transform="translate(430.0,777.8)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<rect x="-64" y="883.9" width="728" height="10" rx="5" fill="url(#rod)" filter="url(#shadow)"/>
+<g transform="translate(300.0,888.9)" filter="url(#shadow)">
+<rect x="-21" y="-10" width="42" height="20" rx="10" fill="url(#bodyb)"/>
+<rect x="-6" y="-14" width="12" height="14" rx="5" fill="url(#bodyb)" opacity=".9"/>
+<circle r="8.5" fill="#f1d3b5" stroke="#00000033" stroke-width="1"/>
+<circle r="8.5" fill="url(#bodyb)" opacity=".35"/>
+</g>
+<g filter="url(#shadow)"><circle cx="358.0" cy="534.0" r="13" fill="url(#ball)"/></g>
+</g></g></svg>
