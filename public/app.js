@@ -211,16 +211,16 @@ function resultEntry(gid, teamA, teamB) {
       <button type="button" class="link center-link" data-quick-toggle="${gid}">← Schnell-Eingabe (Sieg mit ${W} Toren)</button>
     </div>`;
   }
-  const loserName = r.winner === 'a' ? nameB : nameA;
+  const winnerName = r.winner === 'a' ? nameA : nameB;
   return `
   <div class="result">
-    <span class="label">Wer hat gewonnen?</span>
+    <span class="label"><b class="step-no">1</b> Wer hat gewonnen?</span>
     <div class="winner-pick">
       <button type="button" class="win-btn a ${r.winner === 'a' ? 'on' : ''}" data-winner="a" data-game="${gid}"><span>🏆</span>${nameA}</button>
       <button type="button" class="win-btn b ${r.winner === 'b' ? 'on' : ''}" data-winner="b" data-game="${gid}"><span>🏆</span>${nameB}</button>
     </div>
     ${r.winner ? `
-      <span class="label">Tore von ${loserName} <em class="hint">· Sieger hat ${W}</em></span>
+      <span class="label"><b class="step-no">2</b> Gegentore von ${winnerName} <em class="hint">(Sieger: ${W})</em></span>
       <div class="goal-chips">
         ${Array.from({ length: W }, (_, i) => `<button type="button" class="goal-chip ${r.loser === i ? 'on' : ''}" data-loser="${i}" data-game="${gid}">${i}</button>`).join('')}
       </div>
