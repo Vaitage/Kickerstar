@@ -21,13 +21,13 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; }
+html, body { margin: 0; overscroll-behavior-y: none; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Inter", sans-serif;
   color: var(--text);
   background: var(--bg);
   min-height: 100dvh;
-  overscroll-behavior-y: contain;
 }
 a { color: inherit; text-decoration: none; }
 
@@ -45,7 +45,7 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
 .topbar {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
   background: linear-gradient(180deg, rgba(30, 35, 38, .92), rgba(16, 19, 21, .88));
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-bottom: 2px solid transparent;
@@ -63,7 +63,7 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
 
 .main {
   max-width: 980px; margin: 0 auto;
-  padding: 18px 16px calc(var(--nav-h) + var(--safe-b) + 28px);
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(var(--nav-h) + var(--safe-b) + 28px) max(16px, env(safe-area-inset-left, 0px));
 }
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
@@ -407,13 +407,13 @@ textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; li
 .bar .fill { width: 100%; max-width: 34px; min-height: 0; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #e9eef1, #9aa4ac); opacity: .8; transition: opacity .15s; }
 .bar .fill.peak { opacity: 1; background: linear-gradient(180deg, #ffffff, #c6ced4); }
 .bar .val { font-size: .7rem; font-weight: 700; color: var(--text); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
-.bar:hover .fill, .bar:focus .fill { opacity: 1; }
+.bar:focus .fill { opacity: 1; }
 .bar::after {
   content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
   white-space: nowrap; padding: 6px 9px; border-radius: 8px; background: #0b0f11; border: 1px solid var(--card-b);
   font-size: .75rem; font-weight: 600; color: var(--text); pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 5;
 }
-.bar:hover::after, .bar:focus::after { opacity: 1; }
+.bar:focus::after { opacity: 1; }
 .bars .bar:first-child::after { left: 0; transform: none; }
 .bars .bar:last-child::after { left: auto; right: 0; transform: none; }
 .xlabels { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 3px; margin-top: 5px; }
@@ -472,3 +472,30 @@ textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; li
 .label .hint { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); opacity: .8; }
 small.block { display: block; font-size: .78rem; margin-top: 2px; }
 .step-no { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; background: var(--grad); color: #11171b; font-size: .68rem; vertical-align: 1px; }
+
+/* ---------- Mobil: fühlt sich wie eine installierte App an ---------- */
+/* Kein Doppeltipp-Zoom auf Bedienelementen -> Tipp löst sofort aus */
+a, button, summary, label, .btn, .seg, .chip, .step, .win-btn, .goal-chip, .bar, .switch, .rank-row { touch-action: manipulation; }
+/* Langes Drücken markiert keinen Knopf-Text und öffnet kein Link-Menü (Inhalte bleiben kopierbar) */
+button, summary, .btn, .link, .seg, .chip, .step, .win-btn, .goal-chip, .bar, .switch, .nav a, .brand, .leiter-badge {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+/* Rückmeldung schon beim Aufsetzen des Fingers */
+.nav a { transition: color .2s, transform .12s ease-out; }
+.nav a:active { transform: scale(.94); color: var(--text); }
+.seg:active:not(:disabled) { transform: scale(.97); }
+.link:active { background: rgba(255, 255, 255, .1); color: var(--text); }
+.who-link:active, .brand:active { opacity: .7; }
+/* Hover nur dort, wo es eine Maus gibt (sonst bleibt er nach dem Tippen kleben) */
+@media (hover: hover) and (pointer: fine) {
+  .bar:hover .fill, .bar:hover::after { opacity: 1; }
+  .btn:hover:not(.primary):not(.armed) { background: rgba(255, 255, 255, .1); }
+  .rank-row:hover { background: rgba(255, 255, 255, .04); }
+}
+/* Mit dem Finger: Text-Schaltflächen bekommen eine treffbare Fläche */
+@media (pointer: coarse) {
+  .link { min-height: 40px; padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

@@ -237,7 +237,7 @@ function stepper(side, gameId, val) {
   return `
   <div class="stepper ${side}">
     <button type="button" class="step" data-step="${side}" data-dir="-1" data-game="${gameId}" aria-label="weniger">−</button>
-    <input class="score-input" inputmode="numeric" pattern="[0-9]*" data-score-input="${side}" data-game="${gameId}" value="${val}" placeholder="0">
+    <input class="score-input" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" data-score-input="${side}" data-game="${gameId}" value="${val}" placeholder="0">
     <button type="button" class="step" data-step="${side}" data-dir="1" data-game="${gameId}" aria-label="mehr">+</button>
   </div>`;
 }
@@ -343,7 +343,7 @@ function pageNewGame(q) {
   ${isAdmin() ? `<details class="card add-player" ${addOpen ? 'open' : ''}>
     <summary>Spieler fehlt? Hier schnell hinzufügen</summary>
     <form id="addPlayerForm" class="row">
-      <input class="input grow" id="newPlayer" maxlength="30" placeholder="Name">
+      <input class="input grow" id="newPlayer" maxlength="30" placeholder="Name" autocapitalize="words" autocomplete="off" autocorrect="off" enterkeyhint="done">
       <button class="btn">Hinzufügen</button>
     </form>
   </details>` : `<p class="muted small center add-player">Spieler fehlt? Den trägt der Spielleiter ein.</p>`}`;
@@ -627,7 +627,7 @@ function pageSettings() {
     <h3 class="sub">${players.length} ${players.length === 1 ? 'Spieler' : 'Spieler'}</h3>
     <div class="stack tight">
       ${players.map(p => `<form class="row" data-rename="${p.id}">
-        ${avatar(p.id, 'sm')}<input class="input grow" name="name" value="${esc(p.name)}" maxlength="30">
+        ${avatar(p.id, 'sm')}<input class="input grow" name="name" value="${esc(p.name)}" maxlength="30" autocapitalize="words" autocomplete="off" autocorrect="off">
         <button class="btn ghost icon" aria-label="Namen speichern" title="Namen speichern">✓</button>
         <button type="button" class="btn ghost icon danger" data-confirm data-delete-player="${p.id}" aria-label="Spieler löschen">🗑</button>
       </form>`).join('') || '<p class="muted">Noch keine Spieler – oben eintragen.</p>'}
@@ -638,12 +638,12 @@ function pageSettings() {
     <section class="card">
       <h3>Spielregeln</h3>
       <label class="field inline"><span>Ein Spiel geht bis … Tore<small class="muted block">Der Sieger bekommt automatisch so viele Tore (Standard 10)</small></span>
-        <input class="input num" type="number" min="3" max="99" name="winGoals" value="${s.winGoals}"></label>
+        <input class="input num" type="number" inputmode="numeric" min="3" max="99" name="winGoals" value="${s.winGoals}"></label>
     </section>
     <section class="card">
       <h3>Wertung</h3>
       <label class="field inline"><span>Mindestanzahl Spiele für die Wertung</span>
-        <input class="input num" type="number" min="0" max="999" name="minGames" value="${s.minGames}"></label>
+        <input class="input num" type="number" inputmode="numeric" min="0" max="999" name="minGames" value="${s.minGames}"></label>
       <label class="switch"><input type="checkbox" name="showUnranked" ${s.showUnranked ? 'checked' : ''}><span class="track"></span>
         <span>Spieler unter der Mindestanzahl trotzdem anzeigen</span></label>
       <label class="field inline"><span>Standard-Sortierung im Ranking</span>
@@ -654,11 +654,11 @@ function pageSettings() {
     <section class="card">
       <h3>Punkte</h3>
       <label class="field inline"><span>Sieg 1 gegen 1 (Punkte für den Sieger)</span>
-        <input class="input num" type="number" min="0" max="99" name="pointsSingle" value="${s.pointsSingle}"></label>
+        <input class="input num" type="number" inputmode="numeric" min="0" max="99" name="pointsSingle" value="${s.pointsSingle}"></label>
       <label class="field inline"><span>Sieg 2 gegen 2 (Punkte für jeden Sieger)</span>
-        <input class="input num" type="number" min="0" max="99" name="pointsDoubleEach" value="${s.pointsDoubleEach}"></label>
+        <input class="input num" type="number" inputmode="numeric" min="0" max="99" name="pointsDoubleEach" value="${s.pointsDoubleEach}"></label>
       <label class="field inline"><span>Elo-Faktor K (wie stark ein Spiel zählt)</span>
-        <input class="input num" type="number" min="1" max="100" name="eloK" value="${s.eloK}"></label>
+        <input class="input num" type="number" inputmode="numeric" min="1" max="100" name="eloK" value="${s.eloK}"></label>
     </section>
     <section class="card">
       <h3>Tische</h3>
