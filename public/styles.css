@@ -214,13 +214,9 @@ select.input option { background: #14201c; }
 .table-card.live::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--blue), #dfe5ea 50%, var(--red)); }
 .free-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .mini-table {
-  width: 96px; height: 56px; border-radius: 8px; position: relative;
-  background: repeating-linear-gradient(90deg, #23904a 0 12px, #1d7c3f 12px 24px);
-  border: 2px solid rgba(255, 255, 255, .55);
+  display: block; width: 96px; height: 56px; flex: none; border-radius: 6px; overflow: hidden;
   box-shadow: 0 0 0 3px #1a1f22, 0 0 0 4px rgba(220, 228, 235, .35);
 }
-.mini-table::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 2px solid rgba(255, 255, 255, .55); }
-.mini-table::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, .55); border-radius: 50%; transform: translate(-50%, -50%); }
 
 .matchup { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
 .side { display: grid; gap: 8px; }

@@ -137,7 +137,18 @@ function pageOverview() {
       <article class="card table-card free">
         <header><span class="table-name">${esc(name)}</span><span class="badge free">Frei</span></header>
         <div class="free-body">
-          <div class="mini-table"></div>
+          <svg class="mini-table" viewBox="0 0 96 56" aria-hidden="true">
+            <rect width="96" height="56" fill="#1d7c3f"/>
+            ${[0, 2, 4, 6].map(i => `<rect x="${i * 12}" width="12" height="56" fill="#23904a"/>`).join('')}
+            <g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.5">
+              <rect x="3" y="3" width="90" height="50" rx="1"/>
+              <line x1="48" y1="3" x2="48" y2="53"/>
+              <circle cx="48" cy="28" r="9"/>
+              <rect x="3" y="17" width="10" height="22"/>
+              <rect x="83" y="17" width="10" height="22"/>
+            </g>
+            <circle cx="48" cy="28" r="1.6" fill="#fff"/>
+          </svg>
           <a class="btn primary" href="#/spiel?t=${i}">Spiel starten</a>
         </div>
       </article>`;
