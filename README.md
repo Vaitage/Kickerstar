@@ -4,7 +4,8 @@ Lokale Tischkicker-Liga für den Verein: anmelden mit Namen, Tisch wählen, Spie
 
 ## Funktionen
 
-- **Anmeldung nur mit Namen.** Neue Namen werden automatisch als Spieler angelegt, bekannte antippen.
+- **Spielleiter mit PIN:** Beim ersten Start wird eine Spielleiter-PIN festgelegt. Nur der Spielleiter trägt Spieler ein (auch mehrere auf einmal), benennt sie um, ändert Einstellungen und löscht Spiele.
+- **Anmeldung der Spieler** durch Antippen des eigenen Namens. Spieler können Spiele starten, Ergebnisse eintragen und laufende Spiele abbrechen.
 - **Tische:** 3 Tische voreingestellt, Anzahl und Namen sind änderbar.
 - **Spiel starten:** Tisch, Modus 1:1 oder 2:2, Spieler per Dropdown. Belegte Tische und Spieler, die gerade spielen, sind gesperrt.
 - **Ergebnis eintragen:** Tore mit +/−. Das geht für laufende Spiele oder direkt für schon gespielte.
@@ -15,6 +16,10 @@ Lokale Tischkicker-Liga für den Verein: anmelden mit Namen, Tisch wählen, Spie
 - **Spielerseite** mit Statistik, bestem Partner, Angstgegner und Elo-Verlauf pro Spiel.
 - **Sicherung** als JSON herunterladen und wieder laden.
 - Installierbar als App (PWA), funktioniert **offline**.
+
+> Die PIN schützt vor versehentlichen Änderungen, sie ist kein Bankschutz. Im Lokal-Modus liegt sie im Browser des Geräts. Im Server-Modus prüft der Server sie und gibt sie nie heraus. PIN vergessen? Im Server-Modus `adminPin` in `data/state.json` leeren und den Server neu starten. Im Lokal-Modus hilft nur, die Browserdaten der Seite zu löschen (vorher eine Sicherung machen).
+>
+> In der **Demo** (Knopf beim ersten Start) lautet die Spielleiter-PIN **1234**.
 
 Wie die faire Gewichtung funktioniert, steht in [docs/GEWICHTUNG.md](docs/GEWICHTUNG.md).
 

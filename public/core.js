@@ -13,7 +13,19 @@ export const DEFAULT_SETTINGS = {
   pointsDoubleEach: 1,     // 2:2 – Punkte für jeden Sieger
   eloStart: 1000,
   eloK: 32,
+  adminPin: '',            // PIN des Spielleiters ('' = noch nicht eingerichtet)
 };
+
+// Aktionen, die nur der Spielleiter ausführen darf (Aktion muss die richtige PIN mitschicken)
+export const ADMIN_ACTIONS = new Set([
+  'addPlayer', 'renamePlayer', 'deletePlayer', 'deleteGame',
+  'updateSettings', 'importState', 'reset', 'setPin', 'verifyPin',
+]);
+
+/** Ist ein Spielleiter eingerichtet? (Server liefert die PIN nicht aus, nur hasPin) */
+export function hasPin(state) {
+  return !!(state.settings.adminPin || state.settings.hasPin);
+}
 
 export function emptyState() {
   return {
@@ -81,8 +93,12 @@ function validateScore(scoreA, scoreB) {
 
 /** Wendet eine Aktion an und liefert einen NEUEN Zustand (wirft ActionError bei ungültigen Eingaben). */
 export function reduce(state, action) {
-  const s = structuredClone(state);
   const p = action.payload || {};
+  if (ADMIN_ACTIONS.has(action.type) && state.settings.adminPin && String(action.pin ?? '') !== state.settings.adminPin) {
+    fail(action.type === 'verifyPin' ? 'Falsche PIN.' : 'Das darf nur der Spielleiter.');
+  }
+  if (action.type === 'verifyPin') return state;
+  const s = structuredClone(state);
   switch (action.type) {
     case 'addPlayer': {
       const name = cleanName(p.name);
@@ -152,8 +168,15 @@ export function reduce(state, action) {
       s.games = s.games.filter(x => x.id !== p.id);
       break;
     }
+    case 'setPin': {
+      const pin = String(p.newPin ?? '').trim();
+      if (!/^\d{4,8}$/.test(pin)) fail('Die PIN muss aus 4 bis 8 Ziffern bestehen.');
+      s.settings.adminPin = pin;
+      break;
+    }
     case 'updateSettings': {
-      const next = { ...s.settings, ...p };
+      const { adminPin: _a, hasPin: _h, ...rest } = p;
+      const next = { ...s.settings, ...rest };
       next.minGames = clampInt(next.minGames, 0, 999, DEFAULT_SETTINGS.minGames);
       next.pointsSingle = clampInt(next.pointsSingle, 0, 99, DEFAULT_SETTINGS.pointsSingle);
       next.pointsDoubleEach = clampInt(next.pointsDoubleEach, 0, 99, DEFAULT_SETTINGS.pointsDoubleEach);
@@ -171,6 +194,8 @@ export function reduce(state, action) {
     case 'importState': {
       const imported = normalizeState(p.state);
       imported.rev = s.rev;
+      imported.settings.adminPin = s.settings.adminPin; // PIN bleibt beim Import erhalten
+      delete imported.settings.hasPin;
       Object.assign(s, imported);
       break;
     }

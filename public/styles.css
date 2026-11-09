@@ -314,3 +314,18 @@ select.input option { background: #14201c; }
 @media (min-width: 720px) {
   .nav { left: 50%; right: auto; transform: translateX(-50%); width: 520px; bottom: 14px; border-radius: 22px; border: 1px solid var(--card-b); height: var(--nav-h); padding: 0; }
 }
+
+/* ---------- Spielleiter ---------- */
+.leiter-badge { font-size: .72rem; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(255, 210, 90, .15); color: var(--gold); white-space: nowrap; }
+.leiter-login { text-align: left; margin-top: 8px; }
+.leiter-login summary, .add-player summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.leiter-login form { margin-top: 12px; }
+.input.pin { letter-spacing: .3em; text-align: center; font-weight: 700; }
+.input.pin::placeholder { letter-spacing: .1em; font-weight: 500; }
+textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; line-height: 1.4; }
+.card h3.sub { margin: 18px 0 10px; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.lock { text-align: center; display: grid; gap: 10px; }
+.lock .lock-icon { font-size: 2.2rem; }
+.lock form { margin-top: 4px; }
+.page-head { align-items: center; margin-bottom: 4px; }
+.page-head .page-title { margin: 4px 0 12px; }

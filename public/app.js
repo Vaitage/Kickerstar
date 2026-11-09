@@ -1,5 +1,5 @@
 // KickerStars – Oberfläche
-import { computeStats, ranking, liveGames, pointsPerWinner, findPlayerByName, uid } from './core.js';
+import { computeStats, ranking, liveGames, pointsPerWinner, findPlayerByName, uid, hasPin } from './core.js';
 import { createStore } from './store.js';
 import { demoState } from './demo.js';
 
@@ -12,6 +12,13 @@ const $conn = document.getElementById('conn');
 let store;
 let state;
 let me = localStorage.getItem(USER_KEY) || null;
+const PIN_KEY = 'kickerstars.leiterPin';
+let adminPin = localStorage.getItem(PIN_KEY) || null;   // gesetzt = Spielleiter ist angemeldet
+const isAdmin = () => !!adminPin;
+function setAdmin(pin) {
+  adminPin = pin || null;
+  if (pin) localStorage.setItem(PIN_KEY, pin); else localStorage.removeItem(PIN_KEY);
+}
 
 // Entwürfe, damit Eingaben bei Aktualisierungen (z. B. vom Server) nicht verloren gehen
 const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct: false, scoreA: '', scoreB: '' };
@@ -52,7 +59,7 @@ function toast(msg, kind = 'error') {
 
 async function act(type, payload, okMsg) {
   try {
-    await store.dispatch({ type, payload });
+    await store.dispatch({ type, payload, pin: adminPin || undefined });
     if (okMsg) toast(okMsg, 'ok');
     return true;
   } catch (e) {
@@ -69,26 +76,46 @@ function route() {
 // ---------- Seiten ----------
 function pageLogin() {
   const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
-  return `
-  <section class="login">
+  const head = `
     <div class="login-logo">${logoSvg()}</div>
-    <h1>Kicker<span>Stars</span></h1>
-    <p class="muted">Wer steht am Tisch?</p>
-    <form id="loginForm" class="card login-card" autocomplete="off">
-      <label class="label" for="loginName">Dein Name</label>
-      <input id="loginName" class="input big" maxlength="30" placeholder="z. B. Robert" required>
-      <button class="btn primary block">Los geht's</button>
-    </form>
-    ${players.length ? `
-      <p class="muted small">… oder tippe auf deinen Namen</p>
-      <div class="chips">
-        ${players.map(p => `<button class="chip" data-login="${p.id}">${avatar(p.id, 'sm')}${esc(p.name)}</button>`).join('')}
-      </div>` : ''}
-    ${state.games.length === 0 ? `
+    <h1>Kicker<span>Stars</span></h1>`;
+
+  // Erster Start: Spielleiter einrichten
+  if (!hasPin(state)) {
+    return `
+    <section class="login">
+      ${head}
+      <p class="muted">Willkommen! Zuerst wird der <b>Spielleiter</b> eingerichtet.<br>Er trägt die Spieler ein und verwaltet die Einstellungen.</p>
+      <form id="setupForm" class="card login-card" autocomplete="off">
+        <label class="label" for="pin1">Spielleiter-PIN festlegen (4–8 Ziffern)</label>
+        <input id="pin1" class="input big pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="••••" required>
+        <label class="label" for="pin2">PIN wiederholen</label>
+        <input id="pin2" class="input big pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="••••" required>
+        <button class="btn primary block">Spielleiter einrichten</button>
+      </form>
       <div class="demo-box">
         <p class="muted small">Erst mal reinschnuppern?</p>
         <button class="btn ghost block" id="demoBtn">🎮 Demo mit Beispieldaten laden</button>
-      </div>` : ''}
+      </div>
+    </section>`;
+  }
+
+  return `
+  <section class="login">
+    ${head}
+    <p class="muted">Wer steht am Tisch? Tippe auf deinen Namen.</p>
+    ${players.length ? `
+      <div class="chips">
+        ${players.map(p => `<button class="chip" data-login="${p.id}">${avatar(p.id, 'sm')}${esc(p.name)}</button>`).join('')}
+      </div>` : `<div class="card empty">Noch keine Spieler eingetragen.<br>Der Spielleiter muss zuerst die Namen eintragen.</div>`}
+    <p class="muted small">Dein Name fehlt? Sag dem Spielleiter Bescheid.</p>
+    <details class="card leiter-login" ${players.length ? '' : 'open'}>
+      <summary>🔑 Anmelden als Spielleiter</summary>
+      <form id="adminLoginForm" class="row" autocomplete="off">
+        <input id="adminPin" class="input grow pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="PIN" required>
+        <button class="btn primary">Anmelden</button>
+      </form>
+    </details>
   </section>`;
 }
 
@@ -185,7 +212,7 @@ function gameRow(g, eloChange, highlight) {
     <div class="game-foot">
       <span class="pts">+${ppw} ${ppw === 1 ? 'Punkt' : 'Punkte'} ${g.mode === '2v2' ? 'pro Sieger' : ''}</span>
       ${deltaFor !== undefined && deltaFor !== false ? `<span class="elo ${deltaFor >= 0 ? 'up' : 'down'}">Elo ${signed(Math.round(deltaFor))}</span>` : ''}
-      <button class="link danger" data-confirm data-delete-game="${g.id}">Löschen</button>
+      ${isAdmin() ? `<button class="link danger" data-confirm data-delete-game="${g.id}">Löschen</button>` : ''}
     </div>
   </div>`;
 }
@@ -267,13 +294,13 @@ function pageNewGame(q) {
     <button class="btn primary block big">${draft.direct ? 'Ergebnis speichern' : 'Spiel starten'}</button>
   </form>
 
-  <details class="card add-player" ${addOpen ? 'open' : ''}>
+  ${isAdmin() ? `<details class="card add-player" ${addOpen ? 'open' : ''}>
     <summary>Spieler fehlt? Hier schnell hinzufügen</summary>
     <form id="addPlayerForm" class="row">
       <input class="input grow" id="newPlayer" maxlength="30" placeholder="Name">
       <button class="btn">Hinzufügen</button>
     </form>
-  </details>`;
+  </details>` : `<p class="muted small center add-player">Spieler fehlt? Den trägt der Spielleiter ein.</p>`}`;
 }
 
 const MODE_INFO = {
@@ -393,8 +420,55 @@ function pagePlayer(id) {
 function pageSettings() {
   const s = state.settings;
   const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  const dataInfo = `<p class="muted small">Speicherort: <b>${store.mode === 'server' ? 'KickerStars-Server (alle Geräte teilen die Daten)' : 'nur auf diesem Gerät'}</b>.
+      ${store.mode === 'lokal' ? 'Mach ab und zu eine Sicherung – beim Löschen der Browserdaten ist sonst alles weg.' : ''}</p>`;
+
+  if (!isAdmin()) {
+    return `
+    <h1 class="page-title">Einstellungen</h1>
+    <section class="card lock">
+      <div class="lock-icon">🔒</div>
+      <h3>Nur für den Spielleiter</h3>
+      <p class="muted small">Spieler eintragen, Tische, Punkte und Wertung verwaltet der Spielleiter.</p>
+      <form id="adminLoginForm" class="row" autocomplete="off">
+        <input id="adminPin" class="input grow pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Spielleiter-PIN" required>
+        <button class="btn primary">Entsperren</button>
+      </form>
+    </section>
+    <section class="card">
+      <h3>Wertung</h3>
+      <p class="muted small">Gewertet wird ab <b>${s.minGames} Spielen</b>. Sieg 1 gegen 1: <b>+${s.pointsSingle}</b>, Sieg 2 gegen 2: <b>+${s.pointsDoubleEach}</b> für jeden Sieger.</p>
+    </section>
+    <section class="card">
+      <h3>Daten</h3>
+      ${dataInfo}
+      <button class="btn" id="exportBtn">Sicherung herunterladen</button>
+    </section>
+    <p class="muted small center">KickerStars v0.2</p>`;
+  }
+
   return `
-  <h1 class="page-title">Einstellungen</h1>
+  <div class="row page-head">
+    <h1 class="page-title grow">Spielleiter</h1>
+    <button class="btn ghost" id="adminLogout">Spielleiter abmelden</button>
+  </div>
+
+  <section class="card">
+    <h3>Spieler eintragen</h3>
+    <form id="bulkAddForm" class="stack tight" autocomplete="off">
+      <textarea id="bulkNames" class="input area" rows="3" placeholder="Namen eingeben – mehrere mit Komma oder je Zeile, z. B.&#10;Robert, Anna, Ben"></textarea>
+      <button class="btn primary">Eintragen</button>
+    </form>
+    <h3 class="sub">${players.length} ${players.length === 1 ? 'Spieler' : 'Spieler'}</h3>
+    <div class="stack tight">
+      ${players.map(p => `<form class="row" data-rename="${p.id}">
+        ${avatar(p.id, 'sm')}<input class="input grow" name="name" value="${esc(p.name)}" maxlength="30">
+        <button class="btn ghost icon" aria-label="Namen speichern" title="Namen speichern">✓</button>
+        <button type="button" class="btn ghost icon danger" data-confirm data-delete-player="${p.id}" aria-label="Spieler löschen">🗑</button>
+      </form>`).join('') || '<p class="muted">Noch keine Spieler – oben eintragen.</p>'}
+    </div>
+  </section>
+
   <form id="settingsForm" class="stack">
     <section class="card">
       <h3>Wertung</h3>
@@ -428,20 +502,16 @@ function pageSettings() {
   </form>
 
   <section class="card">
-    <h3>Spieler</h3>
-    <div class="stack tight">
-      ${players.map(p => `<form class="row" data-rename="${p.id}">
-        ${avatar(p.id, 'sm')}<input class="input grow" name="name" value="${esc(p.name)}" maxlength="30">
-        <button class="btn ghost">Umbenennen</button>
-        <button type="button" class="btn ghost icon danger" data-confirm data-delete-player="${p.id}" aria-label="Spieler löschen">🗑</button>
-      </form>`).join('') || '<p class="muted">Noch keine Spieler.</p>'}
-    </div>
+    <h3>Spielleiter-PIN ändern</h3>
+    <form id="pinForm" class="row wrap" autocomplete="off">
+      <input id="newPin" class="input grow pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Neue PIN (4–8 Ziffern)" required>
+      <button class="btn">PIN ändern</button>
+    </form>
   </section>
 
   <section class="card">
     <h3>Daten</h3>
-    <p class="muted small">Speicherort: <b>${store.mode === 'server' ? 'KickerStars-Server (alle Geräte teilen die Daten)' : 'nur auf diesem Gerät'}</b>.
-      ${store.mode === 'lokal' ? 'Mach ab und zu eine Sicherung – beim Löschen der Browserdaten ist sonst alles weg.' : ''}</p>
+    ${dataInfo}
     <div class="row wrap">
       <button class="btn" id="exportBtn">Sicherung herunterladen</button>
       <label class="btn">Sicherung laden<input type="file" id="importFile" accept="application/json,.json" hidden></label>
@@ -449,7 +519,7 @@ function pageSettings() {
       <button class="btn danger" data-confirm id="resetBtn">Alle Spiele & Spieler löschen</button>
     </div>
   </section>
-  <p class="muted small center">KickerStars v0.1</p>`;
+  <p class="muted small center">KickerStars v0.2</p>`;
 }
 
 // ---------- Rendern ----------
@@ -458,14 +528,18 @@ function render() {
   const meExists = me && state.players.some(p => p.id === me);
   if (!meExists) { me = null; localStorage.removeItem(USER_KEY); }
 
-  document.body.classList.toggle('logged-out', !me);
-  $user.innerHTML = me ? `${avatar(me, 'sm')}<span>${esc(nameOf(me))}</span><button class="link" id="logout">Abmelden</button>` : '';
+  if (adminPin && !hasPin(state)) setAdmin(null);   // z. B. nach komplettem Zurücksetzen
+  const inside = !!me || isAdmin();
+  document.body.classList.toggle('logged-out', !inside);
+  $user.innerHTML = inside
+    ? `${isAdmin() ? '<span class="leiter-badge" title="Spielleiter">🔑 Leiter</span>' : ''}${me ? `${avatar(me, 'sm')}<span>${esc(nameOf(me))}</span>` : ''}<button class="link" id="logout">Abmelden</button>`
+    : '';
   $conn.innerHTML = store.mode === 'server'
     ? `<span class="dot ${store.online ? 'on' : 'off'}"></span>${store.online ? 'Server' : 'Offline'}`
     : '';
 
   let html, tab = parts[0] || '';
-  if (!me) html = pageLogin();
+  if (!inside) html = pageLogin();
   else if (tab === 'spiel') html = pageNewGame(q);
   else if (tab === 'ranking') html = pageRanking();
   else if (tab === 'spieler') { html = pagePlayer(parts[1]); tab = 'ranking'; }
@@ -506,7 +580,8 @@ document.addEventListener('click', async (e) => {
   if (!t) return;
   if (t.hasAttribute('data-confirm') && !armConfirm(t)) { e.preventDefault(); return; }
 
-  if (t.id === 'logout') { me = null; localStorage.removeItem(USER_KEY); location.hash = '#/'; render(); return; }
+  if (t.id === 'logout') { me = null; localStorage.removeItem(USER_KEY); setAdmin(null); location.hash = '#/'; render(); return; }
+  if (t.id === 'adminLogout') { setAdmin(null); toast('Spielleiter abgemeldet', 'ok'); location.hash = '#/'; render(); return; }
   if (t.dataset.login) { me = t.dataset.login; localStorage.setItem(USER_KEY, me); render(); return; }
 
   if (t.dataset.table !== undefined) { draft.table = Number(t.dataset.table); render(); return; }
@@ -556,10 +631,16 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (t.id === 'demoBtn') {
-    if (await act('importState', { state: demoState(state.settings) }, 'Demo geladen – viel Spaß beim Testen!')) {
-      if (!me || !state.players.some(p => p.id === me)) { me = 'demo0'; localStorage.setItem(USER_KEY, me); }
-      location.hash = '#/'; render();
+    if (!(await act('importState', { state: demoState(state.settings) }))) return;
+    let msg = 'Demo geladen – viel Spaß beim Testen!';
+    if (!hasPin(state)) {  // Demo ohne eingerichteten Spielleiter: PIN 1234
+      if (!(await act('setPin', { newPin: '1234' }))) return;
+      setAdmin('1234');
+      msg = 'Demo geladen – Spielleiter-PIN: 1234';
     }
+    if (!me || !state.players.some(p => p.id === me)) { me = 'demo0'; localStorage.setItem(USER_KEY, me); }
+    toast(msg, 'ok');
+    location.hash = '#/'; render();
     return;
   }
   if (t.id === 'resetBtn') { await act('reset', {}, 'Alles gelöscht'); return; }
@@ -596,15 +677,39 @@ document.addEventListener('change', async (e) => {
 document.addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
-  if (f.id === 'loginForm') {
-    const name = f.querySelector('#loginName').value;
-    let p = findPlayerByName(state, name);
-    if (!p) {
-      if (!(await act('addPlayer', { id: uid(), name, at: Date.now() }))) return;
-      p = findPlayerByName(state, name);
+  if (f.id === 'setupForm') {
+    const p1 = f.querySelector('#pin1').value.trim(), p2 = f.querySelector('#pin2').value.trim();
+    if (p1 !== p2) return toast('Die beiden PINs stimmen nicht überein.');
+    if (await act('setPin', { newPin: p1 })) {
+      setAdmin(p1);
+      toast('Spielleiter eingerichtet – jetzt die Spieler eintragen.', 'ok');
+      location.hash = '#/einstellungen'; render();
     }
-    me = p.id; localStorage.setItem(USER_KEY, me);
-    toast(`Hallo ${p.name}!`, 'ok');
+  }
+  if (f.id === 'adminLoginForm') {
+    const pin = f.querySelector('#adminPin').value.trim();
+    try {
+      await store.dispatch({ type: 'verifyPin', pin });
+      setAdmin(pin);
+      toast('Angemeldet als Spielleiter', 'ok');
+      if (!location.hash.startsWith('#/einstellungen')) location.hash = '#/einstellungen';
+      render();
+    } catch (err) { toast(err.message || 'Falsche PIN.'); f.querySelector('#adminPin').value = ''; }
+  }
+  if (f.id === 'pinForm') {
+    const pin = f.querySelector('#newPin').value.trim();
+    if (await act('setPin', { newPin: pin }, 'PIN geändert – gut merken!')) setAdmin(pin);
+  }
+  if (f.id === 'bulkAddForm') {
+    const names = f.querySelector('#bulkNames').value.split(/[,;\n]+/).map(n => n.trim()).filter(Boolean);
+    if (!names.length) return toast('Bitte mindestens einen Namen eingeben.');
+    const added = [], skipped = [];
+    for (const name of names) {
+      if (findPlayerByName(state, name)) { skipped.push(name); continue; }
+      try { await store.dispatch({ type: 'addPlayer', payload: { id: uid(), name, at: Date.now() }, pin: adminPin }); added.push(name); }
+      catch (err) { toast(`${name}: ${err.message}`); return; }
+    }
+    toast(`${added.length} eingetragen${skipped.length ? ` · schon vorhanden: ${skipped.join(', ')}` : ''}`, added.length ? 'ok' : 'error');
     render();
   }
   if (f.id === 'addPlayerForm') {

@@ -61,3 +61,22 @@ test('Elo bleibt in Summe gleich (Nullsummenspiel)', () => {
   const total = rows.reduce((a, r) => a + r.elo, 0);
   assert.ok(Math.abs(total - 4000) <= 2);
 });
+
+test('Spielleiter-PIN: nur mit PIN Spieler eintragen, Spieler dürfen spielen', () => {
+  let { s, id } = setup(['Robert', 'Anna']);
+  s = reduce(s, { type: 'setPin', payload: { newPin: '4711' } });
+  assert.throws(() => reduce(s, { type: 'addPlayer', payload: { name: 'Ben' } }), /Spielleiter/);
+  assert.throws(() => reduce(s, { type: 'verifyPin', pin: '0000' }), /Falsche PIN/);
+  assert.equal(reduce(s, { type: 'verifyPin', pin: '4711' }), s);
+  s = reduce(s, { type: 'addPlayer', pin: '4711', payload: { name: 'Ben' } });
+  assert.equal(s.players.length, 3);
+  // Spiele starten/eintragen geht ohne PIN
+  s = reduce(s, { type: 'recordGame', payload: { table: 0, mode: '1v1', teamA: [id.Robert], teamB: [id.Anna], scoreA: 10, scoreB: 3 } });
+  assert.throws(() => reduce(s, { type: 'deleteGame', payload: { id: s.games[0].id } }), /Spielleiter/);
+  // PIN lässt sich weder per Einstellungen noch per Import aushebeln
+  s = reduce(s, { type: 'updateSettings', pin: '4711', payload: { adminPin: '', minGames: 5 } });
+  assert.equal(s.settings.adminPin, '4711');
+  s = reduce(s, { type: 'importState', pin: '4711', payload: { state: { players: [], games: [], settings: { adminPin: '1' } } } });
+  assert.equal(s.settings.adminPin, '4711');
+  assert.throws(() => reduce(s, { type: 'setPin', pin: '4711', payload: { newPin: '12' } }), /4 bis 8/);
+});

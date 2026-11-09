@@ -45,6 +45,12 @@ function save() {
   return writing;
 }
 
+// Die PIN verlässt den Server nie – Clients sehen nur, DASS es eine gibt
+function publicState(st) {
+  const { adminPin, ...settings } = st.settings;
+  return { ...st, settings: { ...settings, hasPin: !!adminPin } };
+}
+
 function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
@@ -66,14 +72,14 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/state' && req.method === 'GET') {
       const rev = url.searchParams.get('rev');
       if (rev !== null && Number(rev) === state.rev) { res.writeHead(204); return res.end(); }
-      return send(res, 200, state);
+      return send(res, 200, publicState(state));
     }
     if (url.pathname === '/api/action' && req.method === 'POST') {
       const action = await readBody(req);
       try {
         const next = reduce(state, action);
         if (next !== state) { state = next; await save(); }
-        return send(res, 200, { state });
+        return send(res, 200, { state: publicState(state) });
       } catch (e) {
         if (e instanceof ActionError) return send(res, 400, { error: e.message });
         throw e;
