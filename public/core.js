@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   tables: ['Tisch 1', 'Tisch 2', 'Tisch 3'],
   pointsSingle: 2,         // 1:1 – Punkte für den Sieger
   pointsDoubleEach: 1,     // 2:2 – Punkte für jeden Sieger
+  winGoals: 10,            // mit so vielen Toren gewinnt man (Schnell-Eingabe)
   eloStart: 1000,
   eloK: 32,
   adminPin: '',            // PIN des Spielleiters ('' = noch nicht eingerichtet)
@@ -180,6 +181,7 @@ export function reduce(state, action) {
       next.minGames = clampInt(next.minGames, 0, 999, DEFAULT_SETTINGS.minGames);
       next.pointsSingle = clampInt(next.pointsSingle, 0, 99, DEFAULT_SETTINGS.pointsSingle);
       next.pointsDoubleEach = clampInt(next.pointsDoubleEach, 0, 99, DEFAULT_SETTINGS.pointsDoubleEach);
+      next.winGoals = clampInt(next.winGoals, 1, 99, DEFAULT_SETTINGS.winGoals);
       next.eloK = clampInt(next.eloK, 1, 100, DEFAULT_SETTINGS.eloK);
       next.eloStart = clampInt(next.eloStart, 0, 5000, DEFAULT_SETTINGS.eloStart);
       next.showUnranked = !!next.showUnranked;

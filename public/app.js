@@ -21,8 +21,9 @@ function setAdmin(pin) {
 }
 
 // Entwürfe, damit Eingaben bei Aktualisierungen (z. B. vom Server) nicht verloren gehen
-const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct: false, scoreA: '', scoreB: '' };
-const scoreDraft = {};      // gameId -> {a, b}
+const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct: false };
+const scoreDraft = {};      // gameId ('draft' = neues Spiel) -> {winner, loser, manual, a, b}
+const newResult = () => ({ winner: null, loser: null, manual: false, a: '', b: '' });
 let rankMode = null;         // Ansicht im Ranking (null = Standard aus Einstellungen)
 let addOpen = false;         // „Spieler hinzufügen“ aufgeklappt?
 
@@ -152,11 +153,7 @@ function pageOverview() {
         <div class="side b">${g.teamB.map(id => `<div class="pl">${avatar(id)}<span>${esc(nameOf(id))}</span></div>`).join('')}</div>
       </div>
       ${sd ? `
-        <div class="score-entry">
-          ${stepper('a', g.id, sd.a)}
-          <span class="colon">:</span>
-          ${stepper('b', g.id, sd.b)}
-        </div>
+        ${resultEntry(g.id, g.teamA, g.teamB)}
         <div class="row">
           <button class="btn ghost" data-score-cancel="${g.id}">Zurück</button>
           <button class="btn primary grow" data-score-save="${g.id}">Speichern</button>
@@ -182,6 +179,45 @@ function pageOverview() {
   <h2 class="section-title">Letzte Spiele</h2>
   ${done.length ? `<section class="card list">${done.slice(0, 20).map(g => gameRow(g, eloChange)).join('')}</section>`
     : `<div class="empty card">Noch keine Spiele. Ab an den Tisch! ⚽</div>`}`;
+}
+
+// Ergebnis-Eingabe: Gewinner antippen -> Tore des Verlierers antippen (Gewinner hat automatisch winGoals Tore)
+function resultEntry(gid, teamA, teamB) {
+  const r = scoreDraft[gid] ||= newResult();
+  const W = state.settings.winGoals;
+  const label = (ids, fallback) => ids.filter(Boolean).length ? team(ids.filter(Boolean)) : fallback;
+  const nameA = label(teamA, 'Team Blau'), nameB = label(teamB, 'Team Rot');
+  if (r.manual) {
+    return `
+    <div class="result">
+      <div class="score-entry">
+        ${stepper('a', gid, r.a)}
+        <span class="colon">:</span>
+        ${stepper('b', gid, r.b)}
+      </div>
+      <button type="button" class="link center-link" data-quick-toggle="${gid}">← Schnell-Eingabe (Sieg mit ${W} Toren)</button>
+    </div>`;
+  }
+  const loserName = r.winner === 'a' ? nameB : nameA;
+  return `
+  <div class="result">
+    <span class="label">Wer hat gewonnen?</span>
+    <div class="winner-pick">
+      <button type="button" class="win-btn a ${r.winner === 'a' ? 'on' : ''}" data-winner="a" data-game="${gid}"><span>🏆</span>${nameA}</button>
+      <button type="button" class="win-btn b ${r.winner === 'b' ? 'on' : ''}" data-winner="b" data-game="${gid}"><span>🏆</span>${nameB}</button>
+    </div>
+    ${r.winner ? `
+      <span class="label">Tore von ${loserName}</span>
+      <div class="goal-chips">
+        ${Array.from({ length: W }, (_, i) => `<button type="button" class="goal-chip ${r.loser === i ? 'on' : ''}" data-loser="${i}" data-game="${gid}">${i}</button>`).join('')}
+      </div>
+      ${r.loser !== null ? `<div class="result-preview">
+        <span class="${r.winner === 'a' ? 'win' : ''}">${nameA}</span>
+        <b>${r.winner === 'a' ? W : r.loser} : ${r.winner === 'b' ? W : r.loser}</b>
+        <span class="${r.winner === 'b' ? 'win' : ''}">${nameB}</span>
+      </div>` : ''}` : ''}
+    <button type="button" class="link center-link" data-quick-toggle="${gid}">Anderes Ergebnis eintragen</button>
+  </div>`;
 }
 
 function stepper(side, gameId, val) {
@@ -283,12 +319,9 @@ function pageNewGame(q) {
         <span class="track"></span>
         <span>Spiel ist schon vorbei – Ergebnis direkt eintragen</span>
       </label>
-      ${draft.direct ? `
-        <div class="score-entry">
-          ${stepper('a', 'draft', draft.scoreA)}
-          <span class="colon">:</span>
-          ${stepper('b', 'draft', draft.scoreB)}
-        </div>` : ''}
+      ${draft.direct ? resultEntry('draft',
+        draft.mode === '2v2' ? [draft.a1, draft.a2] : [draft.a1],
+        draft.mode === '2v2' ? [draft.b1, draft.b2] : [draft.b1]) : ''}
     </section>
 
     <button class="btn primary block big">${draft.direct ? 'Ergebnis speichern' : 'Spiel starten'}</button>
@@ -437,7 +470,7 @@ function pageSettings() {
     </section>
     <section class="card">
       <h3>Wertung</h3>
-      <p class="muted small">Gewertet wird ab <b>${s.minGames} Spielen</b>. Sieg 1 gegen 1: <b>+${s.pointsSingle}</b>, Sieg 2 gegen 2: <b>+${s.pointsDoubleEach}</b> für jeden Sieger.</p>
+      <p class="muted small">Gespielt wird auf <b>${s.winGoals} Tore</b>. Gewertet wird ab <b>${s.minGames} Spielen</b>. Sieg 1 gegen 1: <b>+${s.pointsSingle}</b>, Sieg 2 gegen 2: <b>+${s.pointsDoubleEach}</b> für jeden Sieger.</p>
     </section>
     <section class="card">
       <h3>Daten</h3>
@@ -487,6 +520,8 @@ function pageSettings() {
         <input class="input num" type="number" min="0" max="99" name="pointsSingle" value="${s.pointsSingle}"></label>
       <label class="field inline"><span>Sieg 2 gegen 2 (Punkte für jeden Sieger)</span>
         <input class="input num" type="number" min="0" max="99" name="pointsDoubleEach" value="${s.pointsDoubleEach}"></label>
+      <label class="field inline"><span>Tore zum Sieg (für die Schnell-Eingabe)</span>
+        <input class="input num" type="number" min="1" max="99" name="winGoals" value="${s.winGoals}"></label>
       <label class="field inline"><span>Elo-Faktor K (wie stark ein Spiel zählt)</span>
         <input class="input num" type="number" min="1" max="100" name="eloK" value="${s.eloK}"></label>
     </section>
@@ -570,9 +605,14 @@ function armConfirm(btn) {
   return false;
 }
 
+/** Liefert {scoreA, scoreB} oder null (mit Hinweis), wenn noch etwas fehlt. */
 function readScore(gameId) {
-  const src = gameId === 'draft' ? { a: draft.scoreA, b: draft.scoreB } : scoreDraft[gameId];
-  return { scoreA: parseInt(src.a, 10), scoreB: parseInt(src.b, 10) };
+  const r = scoreDraft[gameId] || newResult();
+  if (r.manual) return { scoreA: parseInt(r.a, 10), scoreB: parseInt(r.b, 10) };
+  if (!r.winner) { toast('Bitte zuerst den Gewinner antippen.'); return null; }
+  if (r.loser === null) { toast('Bitte die Tore des Verlierers antippen.'); return null; }
+  const W = state.settings.winGoals;
+  return r.winner === 'a' ? { scoreA: W, scoreB: r.loser } : { scoreA: r.loser, scoreB: W };
 }
 
 document.addEventListener('click', async (e) => {
@@ -591,18 +631,34 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.step) {
     e.preventDefault();
     const gid = t.dataset.game, side = t.dataset.step, dir = Number(t.dataset.dir);
-    const obj = gid === 'draft' ? draft : scoreDraft[gid];
-    const key = gid === 'draft' ? (side === 'a' ? 'scoreA' : 'scoreB') : side;
-    obj[key] = Math.max(0, Math.min(99, (parseInt(obj[key], 10) || 0) + dir));
+    const obj = scoreDraft[gid] ||= newResult();
+    obj[side] = Math.max(0, Math.min(99, (parseInt(obj[side], 10) || 0) + dir));
     const input = document.querySelector(`[data-score-input="${side}"][data-game="${gid}"]`);
-    if (input) input.value = obj[key];
+    if (input) input.value = obj[side];
     return;
   }
-  if (t.dataset.scoreOpen) { scoreDraft[t.dataset.scoreOpen] = { a: '', b: '' }; render(); return; }
+  if (t.dataset.winner) {
+    const r = scoreDraft[t.dataset.game] ||= newResult();
+    if (r.winner !== t.dataset.winner) { r.winner = t.dataset.winner; r.loser = null; }
+    render(); return;
+  }
+  if (t.dataset.loser !== undefined) { scoreDraft[t.dataset.game].loser = Number(t.dataset.loser); render(); return; }
+  if (t.dataset.quickToggle) {
+    const r = scoreDraft[t.dataset.quickToggle] ||= newResult();
+    r.manual = !r.manual;
+    if (r.manual && r.winner && r.loser !== null) {  // Schnell-Eingabe in die +/- Felder übernehmen
+      const W = state.settings.winGoals;
+      r.a = r.winner === 'a' ? W : r.loser; r.b = r.winner === 'b' ? W : r.loser;
+    }
+    render(); return;
+  }
+  if (t.dataset.scoreOpen) { scoreDraft[t.dataset.scoreOpen] = newResult(); render(); return; }
   if (t.dataset.scoreCancel) { delete scoreDraft[t.dataset.scoreCancel]; render(); return; }
   if (t.dataset.scoreSave) {
     const id = t.dataset.scoreSave;
-    if (await act('finishGame', { id, ...readScore(id), at: Date.now(), by: me }, 'Ergebnis gespeichert')) delete scoreDraft[id];
+    const sc = readScore(id);
+    if (!sc) return;
+    if (await act('finishGame', { id, ...sc, at: Date.now(), by: me }, `Gespeichert: ${sc.scoreA} : ${sc.scoreB}`)) delete scoreDraft[id];
     render();
     return;
   }
@@ -656,8 +712,7 @@ document.addEventListener('input', (e) => {
     const gid = t.dataset.game;
     const v = t.value.replace(/\D/g, '').slice(0, 2);
     t.value = v;
-    if (gid === 'draft') draft[t.dataset.scoreInput === 'a' ? 'scoreA' : 'scoreB'] = v;
-    else if (scoreDraft[gid]) scoreDraft[gid][t.dataset.scoreInput] = v;
+    if (scoreDraft[gid]) scoreDraft[gid][t.dataset.scoreInput] = v;
   }
 });
 
@@ -723,11 +778,17 @@ document.addEventListener('submit', async (e) => {
     const teamA = draft.mode === '2v2' ? [draft.a1, draft.a2] : [draft.a1];
     const teamB = draft.mode === '2v2' ? [draft.b1, draft.b2] : [draft.b1];
     const base = { id: uid(), table: draft.table, mode: draft.mode, teamA, teamB, at: Date.now(), by: me };
-    const ok = draft.direct
-      ? await act('recordGame', { ...base, ...readScore('draft') }, 'Ergebnis gespeichert')
-      : await act('startGame', base, 'Spiel gestartet – viel Erfolg!');
+    let ok;
+    if (draft.direct) {
+      const sc = readScore('draft');
+      if (!sc) return;
+      ok = await act('recordGame', { ...base, ...sc }, `Gespeichert: ${sc.scoreA} : ${sc.scoreB}`);
+    } else {
+      ok = await act('startGame', base, 'Spiel gestartet – viel Erfolg!');
+    }
     if (ok) {
-      Object.assign(draft, { table: null, a1: '', a2: '', b1: '', b2: '', direct: false, scoreA: '', scoreB: '' });
+      Object.assign(draft, { table: null, a1: '', a2: '', b1: '', b2: '', direct: false });
+      delete scoreDraft.draft;
       location.hash = '#/';
     }
   }
@@ -740,6 +801,7 @@ document.addEventListener('submit', async (e) => {
       pointsSingle: fd.get('pointsSingle'),
       pointsDoubleEach: fd.get('pointsDoubleEach'),
       eloK: fd.get('eloK'),
+      winGoals: fd.get('winGoals'),
       tables: fd.getAll('table'),
     }, 'Gespeichert');
     rankMode = null;

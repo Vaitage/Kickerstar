@@ -333,3 +333,37 @@ textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; li
 /* Schmale Tisch-Karten (z. B. 3 Tische nebeneinander am PC) */
 @media (max-width: 360px) { .step { width: 32px; } }
 .table-card .row .btn.primary.grow { min-width: 0; padding: 0 12px; }
+
+/* ---------- Schnell-Eingabe Ergebnis ---------- */
+.result { display: grid; gap: 8px; }
+.result .label { margin: 2px 0 0; }
+.winner-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.win-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 64px; padding: 8px; border-radius: 14px; min-width: 0;
+  border: 2px solid var(--card-b); background: rgba(255, 255, 255, .04);
+  color: var(--text); font: inherit; font-weight: 800; font-size: .92rem; line-height: 1.2; cursor: pointer;
+  overflow-wrap: anywhere; transition: all .15s;
+}
+.win-btn span { font-size: 1.2rem; filter: grayscale(1) opacity(.5); transition: filter .15s; }
+.win-btn.a { border-color: rgba(77, 163, 255, .35); }
+.win-btn.b { border-color: rgba(255, 93, 108, .35); }
+.win-btn.a.on { background: rgba(77, 163, 255, .2); border-color: var(--blue); box-shadow: 0 0 0 3px rgba(77, 163, 255, .2); }
+.win-btn.b.on { background: rgba(255, 93, 108, .2); border-color: var(--red); box-shadow: 0 0 0 3px rgba(255, 93, 108, .2); }
+.win-btn.on span { filter: none; }
+.win-btn:active, .goal-chip:active { transform: scale(.96); }
+.goal-chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.goal-chip {
+  height: 44px; border-radius: 12px; border: 1px solid var(--card-b); background: rgba(255, 255, 255, .05);
+  color: var(--text); font: inherit; font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.goal-chip.on { background: var(--grad); color: #07110c; border-color: transparent; }
+.result-preview {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 12px; background: rgba(0, 0, 0, .25); font-size: .85rem; color: var(--muted);
+}
+.result-preview span { overflow-wrap: anywhere; }
+.result-preview span:last-child { text-align: right; }
+.result-preview span.win { color: var(--text); font-weight: 800; }
+.result-preview b { font-size: 1.5rem; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.center-link { justify-self: center; text-decoration: underline; text-underline-offset: 3px; }
