@@ -80,3 +80,28 @@ test('Spielleiter-PIN: nur mit PIN Spieler eintragen, Spieler dürfen spielen', 
   assert.equal(s.settings.adminPin, '4711');
   assert.throws(() => reduce(s, { type: 'setPin', pin: '4711', payload: { newPin: '12' } }), /4 bis 8/);
 });
+
+test('Statistik: Kennzahlen, Ergebnisse, Seiten, Serien', async () => {
+  const { gameStats } = await import('../public/stats.js');
+  let { s, id } = setup();
+  const day = Date.now();
+  const rec = (a, b, sa, sb, mode = '1v1', at) => {
+    s = reduce(s, { type: 'recordGame', payload: { table: 0, mode, teamA: a, teamB: b, scoreA: sa, scoreB: sb, at } });
+  };
+  rec([id.Robert], [id.Anna], 10, 0, '1v1', day - 3000);
+  rec([id.Robert], [id.Anna], 10, 9, '1v1', day - 2000);
+  rec([id.Ben, id.Carla], [id.Robert, id.Anna], 4, 10, '2v2', day - 1000);
+  const st = gameStats(s, 'alle', day);
+  assert.equal(st.n, 3);
+  assert.equal(st.goals, 43);
+  assert.equal(st.singles, 2);
+  assert.equal(st.results[0].value, 1);   // 10:0
+  assert.equal(st.results[9].value, 1);   // 10:9
+  assert.equal(st.results[4].value, 1);   // 10:4
+  assert.deepEqual(st.sides, { blau: 2, rot: 1 });
+  assert.equal(st.records.zuNull, 1);
+  assert.equal(st.records.knapp, 1);
+  assert.equal(st.leaders.streak[0].id, id.Robert);
+  assert.equal(st.leaders.streak[0].bestStreak, 3);
+  assert.equal(st.leaders.rivals[0].games, 2);
+});

@@ -2,6 +2,7 @@
 import { computeStats, ranking, liveGames, pointsPerWinner, findPlayerByName, uid, hasPin } from './core.js';
 import { createStore } from './store.js';
 import { demoState } from './demo.js';
+import { gameStats } from './stats.js';
 
 const USER_KEY = 'kickerstars.user';
 const $main = document.getElementById('main');
@@ -25,6 +26,7 @@ const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct
 const scoreDraft = {};      // gameId ('draft' = neues Spiel) -> {winner, loser, manual, a, b}
 const newResult = () => ({ winner: null, loser: null, manual: false, a: '', b: '' });
 let rankMode = null;         // Ansicht im Ranking (null = Standard aus Einstellungen)
+let statRange = 'alle';      // Zeitraum der Statistik
 let addOpen = false;         // „Spieler hinzufügen“ aufgeklappt?
 
 // ---------- Hilfsfunktionen ----------
@@ -450,6 +452,130 @@ function pagePlayer(id) {
   ${games.length ? `<section class="card list">${games.slice(0, 50).map(g => gameRow(g, eloChange, id)).join('')}</section>` : `<div class="empty card">Noch keine Spiele.</div>`}`;
 }
 
+// ---------- Statistik ----------
+const fmtMin = (ms) => { const m = Math.round(ms / 6e4); return m < 1 ? '< 1 Min.' : `${m} Min.`; };
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+function barChart(bars, { title, sub, unit = 'Spiele', everyLabel = 1 }) {
+  const max = Math.max(1, ...bars.map(b => b.value));
+  const peak = Math.max(...bars.map(b => b.value));
+  return `
+  <section class="card chart-card">
+    <h3>${title}</h3>${sub ? `<p class="muted small chart-sub">${sub}</p>` : ''}
+    <div class="bars" style="--n:${bars.length}" role="img" aria-label="${esc(title)}">
+      ${bars.map((b, i) => `
+        <button class="bar" type="button" data-tip="${esc(b.full || b.label)}: ${plural(b.value, unit === 'Spiele' ? 'Spiel' : unit, unit)}">
+          ${b.value && (b.value === peak || bars.length <= 12) ? `<span class="val">${b.value}</span>` : ''}
+          <span class="fill ${b.value === peak && peak > 0 ? 'peak' : ''}" style="height:${(b.value / max) * 100}%"></span>
+        </button>`).join('')}
+    </div>
+    <div class="xlabels" style="--n:${bars.length}">
+      ${bars.map((b, i) => `<span>${i % everyLabel === 0 || (everyLabel === 1) ? esc(b.label) : ''}</span>`).join('')}
+    </div>
+    <details class="table-view"><summary>Als Tabelle</summary>
+      <table>${bars.map(b => `<tr><td>${esc(b.full || b.label)}</td><td>${b.value}</td></tr>`).join('')}</table>
+    </details>
+  </section>`;
+}
+
+function hbarChart(rows, title) {
+  const max = Math.max(1, ...rows.map(r => r.value));
+  const total = rows.reduce((a, r) => a + r.value, 0) || 1;
+  return `
+  <section class="card chart-card">
+    <h3>${title}</h3>
+    <div class="hbars">
+      ${rows.map(r => `
+        <div class="hbar">
+          <span class="hl">${esc(r.label)}</span>
+          <span class="ht"><i style="width:${(r.value / max) * 100}%"></i></span>
+          <span class="hv">${r.value}<small>${Math.round((r.value / total) * 100)} %</small></span>
+        </div>`).join('')}
+    </div>
+  </section>`;
+}
+
+function pageStats() {
+  const st = gameStats(state, statRange);
+  const RANGES = [['alle', 'Alle'], ['30', '30 Tage'], ['7', '7 Tage'], ['heute', 'Heute']];
+  const filter = `<div class="segmented four pills">${RANGES.map(([k, l]) => `<button class="seg ${statRange === k ? 'on' : ''}" data-stat-range="${k}">${l}</button>`).join('')}</div>`;
+  if (!st.n) {
+    return `<h1 class="page-title">Statistik</h1>${filter}<div class="empty card">In diesem Zeitraum gibt es noch keine Spiele.</div>`;
+  }
+  const r = st.records, L = st.leaders;
+  const gameLine = (g) => g ? `${team(g.teamA)} <b>${g.scoreA}:${g.scoreB}</b> ${team(g.teamB)}` : '–';
+  const pBlau = Math.round((st.sides.blau / st.n) * 100);
+  const leaderList = (title, icon, items, fmt, empty = 'Noch zu wenig Spiele') => `
+    <section class="card leader">
+      <h3><span>${icon}</span>${title}</h3>
+      ${items.length ? `<ol>${items.map((it, i) => `<li><span class="pos">${i + 1}</span>${fmt(it)}</li>`).join('')}</ol>` : `<p class="muted small">${empty}</p>`}
+    </section>`;
+  const who = (id) => `<a href="#/spieler/${id}" class="who-link">${avatar(id, 'sm')}<span>${esc(nameOf(id))}</span></a>`;
+
+  return `
+  <h1 class="page-title">Statistik</h1>
+  ${filter}
+
+  <section class="kpi-grid">
+    <div class="card kpi"><b>${st.n}</b><span>Spiele</span></div>
+    <div class="card kpi"><b>${st.goals}</b><span>Tore</span></div>
+    <div class="card kpi"><b>${st.avgGoals.toFixed(1).replace('.', ',')}</b><span>Ø Tore pro Spiel</span></div>
+    <div class="card kpi"><b>${st.avgDuration ? fmtMin(st.avgDuration) : '–'}</b><span>Ø Spieldauer</span></div>
+    <div class="card kpi wide">
+      <div class="split mode-split" role="img" aria-label="${st.singles} Einzel, ${st.doubles} Doppel">
+        <i style="flex:${st.singles || 0.0001}"></i><i style="flex:${st.doubles || 0.0001}"></i>
+      </div>
+      <div class="split-legend"><span><em class="dot s"></em>1 gegen 1 · <b>${st.singles}</b></span><span><em class="dot d"></em>2 gegen 2 · <b>${st.doubles}</b></span></div>
+    </div>
+  </section>
+
+  ${barChart(st.timeline.bars, {
+    title: st.timeline.unit === 'Stunde' ? 'Spiele heute pro Stunde' : 'Spiele pro Tag',
+    everyLabel: st.timeline.bars.length > 14 ? 5 : 1,
+  })}
+
+  <section class="card chart-card">
+    <h3>Blau gegen Rot</h3>
+    <p class="muted small chart-sub">Gewinnt eine Tischseite öfter? (Team Blau = linke Spalte beim Spielstart)</p>
+    <div class="split sides" role="img" aria-label="Blau ${st.sides.blau} Siege, Rot ${st.sides.rot} Siege">
+      <i class="blau" style="flex:${st.sides.blau || 0.0001}"></i><i class="rot" style="flex:${st.sides.rot || 0.0001}"></i>
+    </div>
+    <div class="split-legend sides-legend">
+      <span><em class="dot blau"></em>Blau · <b>${pBlau} %</b> (${plural(st.sides.blau, 'Sieg', 'Siege')})</span>
+      <span>(${plural(st.sides.rot, 'Sieg', 'Siege')}) <b>${100 - pBlau} %</b> · Rot<em class="dot rot"></em></span>
+    </div>
+  </section>
+
+  ${barChart(st.results, {
+    title: 'Ergebnisse',
+    sub: `Wie viele Tore macht der Verlierer? Links = deutlich, rechts = knapp.${st.otherResults ? ` (${plural(st.otherResults, 'Spiel', 'Spiele')} mit anderem Ergebnis nicht dabei)` : ''}`,
+  })}
+
+  <div class="two-col">
+    ${barChart(st.byHour, { title: 'Wann wird gespielt?', sub: 'Spiele nach Uhrzeit (Spielende)', everyLabel: st.byHour.length > 12 ? 2 : 1 })}
+    ${hbarChart(st.byTable, 'Tische')}
+  </div>
+
+  <h2 class="section-title">Rekorde</h2>
+  <section class="records">
+    <div class="card rec"><span class="ic">💥</span><div><b>Höchster Sieg</b><small>${gameLine(r.biggest)}</small></div></div>
+    <div class="card rec"><span class="ic">⏱️</span><div><b>Längstes Spiel${r.longest ? ` · ${fmtMin(r.longest.endedAt - r.longest.startedAt)}` : ''}</b><small>${r.longest ? gameLine(r.longest) : 'Nur bei gestarteten Spielen messbar'}</small></div></div>
+    <div class="card rec"><span class="ic">🧹</span><div><b>Zu-Null-Siege · ${r.zuNull}</b><small>Spiele, in denen der Verlierer kein Tor geschossen hat</small></div></div>
+    <div class="card rec"><span class="ic">😬</span><div><b>Krimis · ${r.knapp}</b><small>Spiele mit nur einem Tor Unterschied (z. B. ${st.winGoals}:${st.winGoals - 1})</small></div></div>
+    <div class="card rec"><span class="ic">📅</span><div><b>Stärkster Tag${r.bestDay ? ` · ${plural(r.bestDay[1], 'Spiel', 'Spiele')}` : ''}</b><small>${r.bestDay ? new Date(r.bestDay[0]).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '–'}</small></div></div>
+  </section>
+
+  <h2 class="section-title">Bestenlisten</h2>
+  <section class="leaders">
+    ${leaderList('Längste Siegesserie', '🔥', L.streak, p => `${who(p.id)}<b>${p.bestStreak} Siege</b>`)}
+    ${leaderList('Gerade im Lauf', '🚀', L.currentStreak, p => `${who(p.id)}<b>${p.streak} in Folge</b>`, 'Gerade hat niemand mehr als 1 Sieg in Folge')}
+    ${leaderList('Meiste Spiele', '🎮', L.games, p => `${who(p.id)}<b>${p.games}</b>`)}
+    ${leaderList('Meiste Tore', '⚽', L.goals, p => `${who(p.id)}<b>${p.goals}</b>`)}
+    ${leaderList('Bestes Duo', '🤝', L.duos, d => `<span class="duo">${d.ids.map(id => esc(nameOf(id))).join(' &amp; ')}</span><b>${Math.round(d.wins / d.games * 100)} %</b><small>${d.wins}/${d.games}</small>`, `Duos zählen ab ${st.minDuo} gemeinsamen Spielen`)}
+    ${leaderList('Größte Rivalität (1:1)', '⚔️', L.rivals, rv => `<span class="duo">${esc(nameOf(rv.ids[0]))} <em>${rv.wins[rv.ids[0]] || 0}:${rv.wins[rv.ids[1]] || 0}</em> ${esc(nameOf(rv.ids[1]))}</span><b>${rv.games}×</b>`)}
+  </section>`;
+}
+
 function pageSettings() {
   const s = state.settings;
   const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -477,7 +603,7 @@ function pageSettings() {
       ${dataInfo}
       <button class="btn" id="exportBtn">Sicherung herunterladen</button>
     </section>
-    <p class="muted small center">KickerStars v0.3</p>`;
+    <p class="muted small center">KickerStars v0.4</p>`;
   }
 
   return `
@@ -554,7 +680,7 @@ function pageSettings() {
       <button class="btn danger" data-confirm id="resetBtn">Alle Spiele & Spieler löschen</button>
     </div>
   </section>
-  <p class="muted small center">KickerStars v0.3</p>`;
+  <p class="muted small center">KickerStars v0.4</p>`;
 }
 
 // ---------- Rendern ----------
@@ -577,6 +703,7 @@ function render() {
   if (!inside) html = pageLogin();
   else if (tab === 'spiel') html = pageNewGame(q);
   else if (tab === 'ranking') html = pageRanking();
+  else if (tab === 'statistik') html = pageStats();
   else if (tab === 'spieler') { html = pagePlayer(parts[1]); tab = 'ranking'; }
   else if (tab === 'einstellungen') html = pageSettings();
   else { html = pageOverview(); tab = ''; }
@@ -616,7 +743,7 @@ function readScore(gameId) {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('button, [data-login], [data-rank-mode]');
+  const t = e.target.closest('button, [data-login], [data-rank-mode], [data-stat-range]');
   if (!t) return;
   if (t.hasAttribute('data-confirm') && !armConfirm(t)) { e.preventDefault(); return; }
 
@@ -627,6 +754,7 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.table !== undefined) { draft.table = Number(t.dataset.table); render(); return; }
   if (t.dataset.mode) { draft.mode = t.dataset.mode; if (draft.mode === '1v1') { draft.a2 = ''; draft.b2 = ''; } render(); return; }
   if (t.dataset.rankMode) { rankMode = t.dataset.rankMode; render(); return; }
+  if (t.dataset.statRange) { statRange = t.dataset.statRange; render(); return; }
 
   if (t.dataset.step) {
     e.preventDefault();
