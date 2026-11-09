@@ -220,7 +220,7 @@ function resultEntry(gid, teamA, teamB) {
       <button type="button" class="win-btn b ${r.winner === 'b' ? 'on' : ''}" data-winner="b" data-game="${gid}"><span>🏆</span>${nameB}</button>
     </div>
     ${r.winner ? `
-      <span class="label">Tore von ${loserName}</span>
+      <span class="label">Tore von ${loserName} <em class="hint">· Sieger hat ${W}</em></span>
       <div class="goal-chips">
         ${Array.from({ length: W }, (_, i) => `<button type="button" class="goal-chip ${r.loser === i ? 'on' : ''}" data-loser="${i}" data-game="${gid}">${i}</button>`).join('')}
       </div>
@@ -636,6 +636,11 @@ function pageSettings() {
 
   <form id="settingsForm" class="stack">
     <section class="card">
+      <h3>Spielregeln</h3>
+      <label class="field inline"><span>Ein Spiel geht bis … Tore<small class="muted block">Der Sieger bekommt automatisch so viele Tore (Standard 10)</small></span>
+        <input class="input num" type="number" min="3" max="99" name="winGoals" value="${s.winGoals}"></label>
+    </section>
+    <section class="card">
       <h3>Wertung</h3>
       <label class="field inline"><span>Mindestanzahl Spiele für die Wertung</span>
         <input class="input num" type="number" min="0" max="999" name="minGames" value="${s.minGames}"></label>
@@ -652,8 +657,6 @@ function pageSettings() {
         <input class="input num" type="number" min="0" max="99" name="pointsSingle" value="${s.pointsSingle}"></label>
       <label class="field inline"><span>Sieg 2 gegen 2 (Punkte für jeden Sieger)</span>
         <input class="input num" type="number" min="0" max="99" name="pointsDoubleEach" value="${s.pointsDoubleEach}"></label>
-      <label class="field inline"><span>Tore zum Sieg (für die Schnell-Eingabe)</span>
-        <input class="input num" type="number" min="1" max="99" name="winGoals" value="${s.winGoals}"></label>
       <label class="field inline"><span>Elo-Faktor K (wie stark ein Spiel zählt)</span>
         <input class="input num" type="number" min="1" max="100" name="eloK" value="${s.eloK}"></label>
     </section>

@@ -469,3 +469,5 @@ textarea.input.area { min-height: 90px; padding: 12px 14px; resize: vertical; li
 .duo em { font-style: normal; color: var(--muted); font-weight: 800; margin: 0 4px; }
 .kpi .split-legend b { display: inline; font-size: inherit; line-height: inherit; }
 .kpi .split-legend { font-size: .85rem; }
+.label .hint { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); opacity: .8; }
+small.block { display: block; font-size: .78rem; margin-top: 2px; }

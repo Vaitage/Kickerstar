@@ -48,6 +48,8 @@ export function normalizeState(raw) {
   if (!raw || typeof raw !== 'object') return s;
   s.rev = Number.isFinite(raw.rev) ? raw.rev : 0;
   s.settings = { ...s.settings, ...(raw.settings || {}) };
+  // Kicker-Spiele gehen mindestens auf 3 Tore – kleinere Werte waren eine Verwechslung (z. B. mit den Punkten)
+  if (!Number.isInteger(s.settings.winGoals) || s.settings.winGoals < 3) s.settings.winGoals = DEFAULT_SETTINGS.winGoals;
   if (!Array.isArray(s.settings.tables) || s.settings.tables.length === 0) {
     s.settings.tables = [...DEFAULT_SETTINGS.tables];
   }
@@ -181,7 +183,7 @@ export function reduce(state, action) {
       next.minGames = clampInt(next.minGames, 0, 999, DEFAULT_SETTINGS.minGames);
       next.pointsSingle = clampInt(next.pointsSingle, 0, 99, DEFAULT_SETTINGS.pointsSingle);
       next.pointsDoubleEach = clampInt(next.pointsDoubleEach, 0, 99, DEFAULT_SETTINGS.pointsDoubleEach);
-      next.winGoals = clampInt(next.winGoals, 1, 99, DEFAULT_SETTINGS.winGoals);
+      next.winGoals = clampInt(next.winGoals, 3, 99, DEFAULT_SETTINGS.winGoals);
       next.eloK = clampInt(next.eloK, 1, 100, DEFAULT_SETTINGS.eloK);
       next.eloStart = clampInt(next.eloStart, 0, 5000, DEFAULT_SETTINGS.eloStart);
       next.showUnranked = !!next.showUnranked;

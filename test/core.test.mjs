@@ -105,3 +105,14 @@ test('Statistik: Kennzahlen, Ergebnisse, Seiten, Serien', async () => {
   assert.equal(st.leaders.streak[0].bestStreak, 3);
   assert.equal(st.leaders.rivals[0].games, 2);
 });
+
+test('Tore zum Sieg: Werte unter 3 werden repariert bzw. abgefangen', async () => {
+  const { normalizeState } = await import('../public/core.js');
+  const repaired = normalizeState({ players: [], games: [], settings: { winGoals: 2 } });
+  assert.equal(repaired.settings.winGoals, 10);
+  let s = emptyState();
+  s = reduce(s, { type: 'updateSettings', payload: { winGoals: 2 } });
+  assert.equal(s.settings.winGoals, 3);
+  s = reduce(s, { type: 'updateSettings', payload: { winGoals: 7 } });
+  assert.equal(s.settings.winGoals, 7);
+});
