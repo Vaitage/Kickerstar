@@ -1,6 +1,7 @@
 // KickerStars – Oberfläche
 import { computeStats, ranking, liveGames, pointsPerWinner, findPlayerByName, uid } from './core.js';
 import { createStore } from './store.js';
+import { demoState } from './demo.js';
 
 const USER_KEY = 'kickerstars.user';
 const $main = document.getElementById('main');
@@ -82,6 +83,11 @@ function pageLogin() {
       <p class="muted small">… oder tippe auf deinen Namen</p>
       <div class="chips">
         ${players.map(p => `<button class="chip" data-login="${p.id}">${avatar(p.id, 'sm')}${esc(p.name)}</button>`).join('')}
+      </div>` : ''}
+    ${state.games.length === 0 ? `
+      <div class="demo-box">
+        <p class="muted small">Erst mal reinschnuppern?</p>
+        <button class="btn ghost block" id="demoBtn">🎮 Demo mit Beispieldaten laden</button>
       </div>` : ''}
   </section>`;
 }
@@ -439,6 +445,7 @@ function pageSettings() {
     <div class="row wrap">
       <button class="btn" id="exportBtn">Sicherung herunterladen</button>
       <label class="btn">Sicherung laden<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+      <button class="btn" data-confirm id="demoBtn">Demo-Daten laden</button>
       <button class="btn danger" data-confirm id="resetBtn">Alle Spiele & Spieler löschen</button>
     </div>
   </section>
@@ -546,6 +553,13 @@ document.addEventListener('click', async (e) => {
     a.download = `kickerstars-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return;
+  }
+  if (t.id === 'demoBtn') {
+    if (await act('importState', { state: demoState(state.settings) }, 'Demo geladen – viel Spaß beim Testen!')) {
+      if (!me || !state.players.some(p => p.id === me)) { me = 'demo0'; localStorage.setItem(USER_KEY, me); }
+      location.hash = '#/'; render();
+    }
     return;
   }
   if (t.id === 'resetBtn') { await act('reset', {}, 'Alles gelöscht'); return; }

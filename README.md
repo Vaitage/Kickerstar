@@ -35,8 +35,8 @@ Der Umzug von Lokal auf Server geht so: Auf dem Handy unter *Einstellungen → S
 Eine PWA braucht `https://` oder `localhost`. Es gibt zwei Wege:
 
 **1. Über GitHub Pages** (am einfachsten, Daten bleiben trotzdem nur auf dem Handy)
-Repo → *Settings → Pages* → Source „Deploy from a branch“, Branch `main`, Ordner `/ (root)`.
-Danach `https://vaitage.github.io/Kickerstar/public/` in Chrome öffnen und über das Menü **„App installieren“** wählen.
+Repo → *Settings → Pages* → Source „Deploy from a branch“, Branch `gh-pages`, Ordner `/ (root)`. Der Branch `gh-pages` enthält den Inhalt von `public/`.
+Danach `https://vaitage.github.io/Kickerstar/` in Chrome öffnen und über das Menü **„App installieren“** wählen.
 (Pages für private Repos braucht GitHub Pro. Sonst das Repo öffentlich schalten oder Weg 2 nehmen.)
 
 **2. Mit Termux direkt auf dem Handy** (komplett ohne Internet)

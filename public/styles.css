@@ -191,6 +191,7 @@ select.input option { background: #14201c; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
 .chip:active { transform: scale(.97); }
+.demo-box { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--card-b); display: grid; gap: 8px; }
 
 /* ---------- Übersicht ---------- */
 .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

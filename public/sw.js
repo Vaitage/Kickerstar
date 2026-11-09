@@ -1,6 +1,6 @@
 // Offline-Cache für die App-Dateien (die Daten selbst liegen im Browser bzw. auf dem Server)
-const CACHE = 'kickerstars-v1';
-const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'store.js', 'manifest.webmanifest',
+const CACHE = 'kickerstars-v2';
+const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'store.js', 'demo.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
