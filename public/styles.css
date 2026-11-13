@@ -263,6 +263,12 @@ select.input option { background: #14201c; }
 .team-box.a h3::before { background: var(--blue); }
 .team-box.b { border-color: rgba(255, 93, 108, .35); background: linear-gradient(180deg, rgba(255, 93, 108, .08), var(--card)); }
 .team-box.b h3::before { background: var(--red); }
+
+/* Spieler eines laufenden Spiels ändern */
+.edit-players { display: grid; gap: 10px; }
+.edit-players .team-box { border: 1px solid; border-radius: 12px; padding: 10px 12px 2px; }
+.edit-players .team-box h3 { margin: 0 0 8px; font-size: 1rem; }
+.edit-players .segmented { margin: 0; }
 .vs-badge { justify-self: center; font-weight: 900; font-size: .9rem; padding: 6px 14px; border-radius: 999px; background: var(--grad); color: #11171b; margin: -4px 0; z-index: 1; box-shadow: 0 4px 14px rgba(0, 0, 0, .5); }
 .add-player { margin-top: 14px; }
 .add-player summary { cursor: pointer; color: var(--muted); font-weight: 600; }

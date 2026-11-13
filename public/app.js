@@ -25,6 +25,7 @@ function setAdmin(pin) {
 const draft = { table: null, mode: '1v1', a1: '', a2: '', b1: '', b2: '', direct: false };
 const scoreDraft = {};      // gameId ('draft' = neues Spiel) -> {winner, loser, manual, a, b}
 const newResult = () => ({ winner: null, loser: null, manual: false, a: '', b: '' });
+const editDraft = {};       // gameId -> {mode, a1, a2, b1, b2}  (Spieler eines laufenden Spiels ändern)
 let rankMode = null;         // Ansicht im Ranking (null = Standard aus Einstellungen)
 let statRange = 'alle';      // Zeitraum der Statistik
 let addOpen = false;         // „Spieler hinzufügen“ aufgeklappt?
@@ -154,6 +155,19 @@ function pageOverview() {
       </article>`;
     }
     const sd = scoreDraft[g.id];
+    const ed = editDraft[g.id];
+    if (ed) return `
+    <article class="card table-card live">
+      <header>
+        <span class="table-name">${esc(name)}</span>
+        <span class="badge live"><i class="pulse"></i>Spieler ändern</span>
+      </header>
+      ${editPlayers(g, ed, live)}
+      <div class="row">
+        <button class="btn ghost" data-edit-cancel="${g.id}">Zurück</button>
+        <button class="btn primary grow" data-edit-save="${g.id}">Übernehmen</button>
+      </div>
+    </article>`;
     return `
     <article class="card table-card live">
       <header>
@@ -174,7 +188,8 @@ function pageOverview() {
         <div class="row">
           <button class="btn ghost danger" data-confirm data-cancel-game="${g.id}">Abbrechen</button>
           <button class="btn primary grow" data-score-open="${g.id}">Ergebnis eintragen</button>
-        </div>`}
+        </div>
+        <button type="button" class="link center-link" data-edit-open="${g.id}">✏️ Spieler ändern</button>`}
     </article>`;
   };
 
@@ -192,6 +207,44 @@ function pageOverview() {
   <h2 class="section-title">Letzte Spiele</h2>
   ${done.length ? `<section class="card list">${done.slice(0, 20).map(g => gameRow(g, eloChange)).join('')}</section>`
     : `<div class="empty card">Noch keine Spiele. Ab an den Tisch! ⚽</div>`}`;
+}
+
+// Spieler eines laufenden Spiels ändern (Modus, Dropdowns, Seiten tauschen)
+function editPlayers(g, ed, live) {
+  const busy = new Set(live.filter(x => x.id !== g.id).flatMap(x => [...x.teamA, ...x.teamB]));
+  const slots = ed.mode === '2v2' ? ['a1', 'a2', 'b1', 'b2'] : ['a1', 'b1'];
+  const players = [...state.players].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  const select = (slot, label) => {
+    const taken = new Set(slots.filter(s => s !== slot).map(s => ed[s]).filter(Boolean));
+    return `
+    <label class="field">
+      <span class="label">${label}</span>
+      <select class="input" data-edit-slot="${slot}" data-game="${g.id}">
+        <option value="">– Spieler wählen –</option>
+        ${players.map(p => {
+          const dis = taken.has(p.id) || busy.has(p.id);
+          return `<option value="${p.id}" ${ed[slot] === p.id ? 'selected' : ''} ${dis ? 'disabled' : ''}>${esc(p.name)}${busy.has(p.id) ? ' (spielt gerade)' : ''}</option>`;
+        }).join('')}
+      </select>
+    </label>`;
+  };
+  const two = ed.mode === '2v2';
+  return `
+  <div class="edit-players">
+    <div class="segmented two">
+      <button type="button" class="seg ${!two ? 'on' : ''}" data-edit-mode="1v1" data-game="${g.id}">1 gegen 1</button>
+      <button type="button" class="seg ${two ? 'on' : ''}" data-edit-mode="2v2" data-game="${g.id}">2 gegen 2</button>
+    </div>
+    <div class="team-box a"><h3>Team Blau</h3>
+      ${select('a1', two ? 'Abwehr / Spieler 1' : 'Spieler')}
+      ${two ? select('a2', 'Sturm / Spieler 2') : ''}
+    </div>
+    <button type="button" class="link center-link" data-edit-swap="${g.id}">⇅ Seiten tauschen</button>
+    <div class="team-box b"><h3>Team Rot</h3>
+      ${select('b1', two ? 'Abwehr / Spieler 1' : 'Spieler')}
+      ${two ? select('b2', 'Sturm / Spieler 2') : ''}
+    </div>
+  </div>`;
 }
 
 // Ergebnis-Eingabe: Gewinner antippen -> Tore des Verlierers antippen (Gewinner hat automatisch winGoals Tore)
@@ -799,6 +852,32 @@ document.addEventListener('click', async (e) => {
     render();
     return;
   }
+  if (t.dataset.editOpen) {
+    const g = state.games.find(x => x.id === t.dataset.editOpen);
+    if (!g) return;
+    editDraft[g.id] = { mode: g.mode, a1: g.teamA[0] || '', a2: g.teamA[1] || '', b1: g.teamB[0] || '', b2: g.teamB[1] || '' };
+    delete scoreDraft[g.id];
+    render(); return;
+  }
+  if (t.dataset.editCancel) { delete editDraft[t.dataset.editCancel]; render(); return; }
+  if (t.dataset.editMode) {
+    const ed = editDraft[t.dataset.game];
+    if (ed) { ed.mode = t.dataset.editMode; if (ed.mode === '1v1') { ed.a2 = ''; ed.b2 = ''; } }
+    render(); return;
+  }
+  if (t.dataset.editSwap) {
+    const ed = editDraft[t.dataset.editSwap];
+    if (ed) [ed.a1, ed.a2, ed.b1, ed.b2] = [ed.b1, ed.b2, ed.a1, ed.a2];
+    render(); return;
+  }
+  if (t.dataset.editSave) {
+    const id = t.dataset.editSave, ed = editDraft[id];
+    if (!ed) return;
+    const two = ed.mode === '2v2';
+    const payload = { id, mode: ed.mode, teamA: two ? [ed.a1, ed.a2] : [ed.a1], teamB: two ? [ed.b1, ed.b2] : [ed.b1], by: me };
+    if (await act('changePlayers', payload, 'Spieler geändert')) delete editDraft[id];
+    render(); return;
+  }
   if (t.dataset.cancelGame) { await act('cancelGame', { id: t.dataset.cancelGame }, 'Spiel abgebrochen'); return; }
   if (t.dataset.deleteGame) { await act('deleteGame', { id: t.dataset.deleteGame }, 'Spiel gelöscht'); return; }
   if (t.dataset.deletePlayer) { await act('deletePlayer', { id: t.dataset.deletePlayer }, 'Spieler gelöscht'); return; }
@@ -856,6 +935,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('change', async (e) => {
   const t = e.target;
   if (t.dataset.slot) { draft[t.dataset.slot] = t.value; render(); }
+  if (t.dataset.editSlot && editDraft[t.dataset.game]) { editDraft[t.dataset.game][t.dataset.editSlot] = t.value; render(); }
   if (t.id === 'direct') { draft.direct = t.checked; render(); }
   if (t.id === 'importFile' && t.files[0]) {
     try {

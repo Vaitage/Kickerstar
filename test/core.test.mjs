@@ -116,3 +116,22 @@ test('Tore zum Sieg: Werte unter 3 werden repariert bzw. abgefangen', async () =
   s = reduce(s, { type: 'updateSettings', payload: { winGoals: 7 } });
   assert.equal(s.settings.winGoals, 7);
 });
+
+test('Laufendes Spiel: Spieler und Modus ändern', () => {
+  let { s, id } = setup(['Robert', 'Anna', 'Ben', 'Carla', 'Dora']);
+  s = reduce(s, { type: 'startGame', payload: { id: 'g1', table: 0, mode: '1v1', teamA: [id.Robert], teamB: [id.Anna], at: 5 } });
+  s = reduce(s, { type: 'startGame', payload: { id: 'g2', table: 1, mode: '1v1', teamA: [id.Dora], teamB: [id.Carla] } });
+  // Spieler, der an einem anderen Tisch steht, ist gesperrt
+  assert.throws(() => reduce(s, { type: 'changePlayers', payload: { id: 'g1', teamA: [id.Robert], teamB: [id.Dora] } }), ActionError);
+  s = reduce(s, { type: 'changePlayers', payload: { id: 'g1', teamA: [id.Ben], teamB: [id.Anna] } });
+  const g = s.games.find(x => x.id === 'g1');
+  assert.deepEqual(g.teamA, [id.Ben]);
+  assert.equal(g.startedAt, 5);
+  assert.equal(g.status, 'live');
+  // auf 2:2 wechseln, nachdem Tisch 2 fertig ist
+  s = reduce(s, { type: 'finishGame', payload: { id: 'g2', scoreA: 10, scoreB: 3 } });
+  s = reduce(s, { type: 'changePlayers', payload: { id: 'g1', mode: '2v2', teamA: [id.Ben, id.Robert], teamB: [id.Anna, id.Dora] } });
+  assert.equal(s.games.find(x => x.id === 'g1').mode, '2v2');
+  // beendete Spiele lassen sich so nicht ändern
+  assert.throws(() => reduce(s, { type: 'changePlayers', payload: { id: 'g2', teamA: [id.Ben], teamB: [id.Carla] } }), ActionError);
+});

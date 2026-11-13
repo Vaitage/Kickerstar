@@ -161,6 +161,18 @@ export function reduce(state, action) {
       if (p.by) g.finishedBy = p.by;
       break;
     }
+    case 'changePlayers': { // Spieler (und ggf. Modus) eines laufenden Spiels ändern
+      const g = s.games.find(x => x.id === p.id);
+      if (!g || g.status !== 'live') fail('Das Spiel läuft nicht mehr.');
+      const mode = p.mode || g.mode;
+      const all = validateTeams(s, { mode, teamA: p.teamA, teamB: p.teamB, table: g.table });
+      const busy = liveGames(s).filter(x => x.id !== g.id).flatMap(x => [...x.teamA, ...x.teamB]);
+      if (all.some(id => busy.includes(id))) fail('Ein Spieler steht gerade an einem anderen Tisch.');
+      g.mode = mode;
+      g.teamA = [...p.teamA]; g.teamB = [...p.teamB];
+      if (p.by) g.changedBy = p.by;
+      break;
+    }
     case 'cancelGame': {
       const g = s.games.find(x => x.id === p.id);
       if (!g || g.status !== 'live') fail('Spiel nicht gefunden.');
